@@ -17,9 +17,11 @@
 
 #include <log4cxx/private/string_c11.h>
 #include <log4cxx/helpers/charsetdecoder.h>
+#include <log4cxx/helpers/transcoder.h>
 #include "../logunit.h"
 #include "../insertwide.h"
 #include <log4cxx/helpers/bytebuffer.h>
+#include <log4cxx/helpers/loglog.h>
 
 using namespace log4cxx;
 using namespace log4cxx::helpers;
@@ -34,7 +36,8 @@ LOGUNIT_CLASS(CharsetDecoderTestCase)
 	LOGUNIT_TEST_SUITE(CharsetDecoderTestCase);
 	LOGUNIT_TEST(decode1);
 	LOGUNIT_TEST(decode2);
-	LOGUNIT_TEST(decode8);
+	LOGUNIT_TEST(decode3);
+	LOGUNIT_TEST(decode4);
 	LOGUNIT_TEST_SUITE_END();
 
 	enum { BUFSIZE = 256 };
@@ -83,9 +86,7 @@ public:
 		LOGUNIT_ASSERT_EQUAL(LogString(LOG4CXX_STR("Hello")), greeting.substr(BUFSIZE - 3));
 	}
 
-
-
-	void decode8()
+	void decode3()
 	{
 		char buf[] = { 'H', 'e', 'l', 'l', 'o', ',', 0, 'W', 'o', 'r', 'l', 'd'};
 		ByteBuffer src(buf, 12);
@@ -103,6 +104,48 @@ public:
 		LOGUNIT_ASSERT_EQUAL(LogString(expected, 12), greeting);
 	}
 
+	void decode4()
+	{
+		char utf8_greet[] = { 'A',
+				(char) 0xD8, (char) 0x85,
+				(char) 0xD4, (char) 0xB0,
+				(char) 0xE0, (char) 0xA6, (char) 0x86,
+				(char) 0xE4, (char) 0xB8, (char) 0x83,
+				(char) 0xD0, (char) 0x80,
+				0
+			};
+#if LOG4CXX_LOGCHAR_IS_WCHAR || LOG4CXX_LOGCHAR_IS_UNICHAR
+		//   arbitrary, hopefully meaningless, characters from
+		//     Latin, Arabic, Armenian, Bengali, CJK and Cyrillic
+		const logchar greet[] = { L'A', 0x0605, 0x0530, 0x986, 0x4E03, 0x400, 0 };
+#endif
+
+#if LOG4CXX_LOGCHAR_IS_UTF8
+		const logchar* greet = utf8_greet;
+#endif
+
+		try
+		{
+			std::locale::global(std::locale("en_US.UTF-8"));
+			auto dec = CharsetDecoder::getDecoder(LOG4CXX_STR("locale"));
+
+			ByteBuffer in(utf8_greet, sizeof (utf8_greet));
+			LogString out;
+			log4cxx_status_t stat = dec->decode(in, out);
+			LOGUNIT_ASSERT_EQUAL(false, CharsetDecoder::isError(stat));
+			stat = dec->decode(in, out);
+			LOGUNIT_ASSERT_EQUAL(false, CharsetDecoder::isError(stat));
+			LOGUNIT_ASSERT(out == greet);
+		}
+		catch (std::runtime_error& ex)
+		{
+			LogString msg;
+			Transcoder::decode(ex.what(), msg);
+			msg.append(LOG4CXX_STR(": "));
+			msg.append(LOG4CXX_STR("en_US.UTF-8"));
+			LogLog::warn(msg);
+		}
+	}
 
 
 };

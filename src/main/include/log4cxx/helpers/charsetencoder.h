@@ -21,7 +21,7 @@
 #include <log4cxx/helpers/object.h>
 #include <log4cxx/helpers/pool.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 namespace helpers
@@ -115,6 +115,12 @@ class LOG4CXX_EXPORT CharsetEncoder : public Object
 		{
 			return (stat != 0);
 		}
+
+		/**
+		* Is the data of \c src unchanged by \c enc.
+		*
+		*/
+		static bool isTriviallyCopyable(const LogString& src, const CharsetEncoderPtr& enc);
 
 
 	private:

@@ -18,16 +18,13 @@
 #define NOMINMAX /* tell wnidows not to define min/max macros */
 #include <log4cxx/logstring.h>
 #include <log4cxx/helpers/cacheddateformat.h>
-
-
-#include <apr_time.h>
 #include <log4cxx/helpers/pool.h>
 #include <limits>
 #include <log4cxx/helpers/exception.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::pattern;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::pattern;
 
 struct CachedDateFormat::CachedDateFormatPriv
 {
@@ -43,7 +40,7 @@ struct CachedDateFormat::CachedDateFormatPriv
 	/**
 	 *   Wrapped formatter.
 	 */
-	log4cxx::helpers::DateFormatPtr formatter;
+	LOG4CXX_NS::helpers::DateFormatPtr formatter;
 
 	/**
 	 *  Index of initial digit of millisecond pattern or
@@ -158,7 +155,7 @@ int CachedDateFormat::findMillisecondStart(
 	Pool& pool)
 {
 
-	apr_time_t slotBegin = (time / 1000000) * 1000000;
+	log4cxx_time_t slotBegin = (time / 1000000) * 1000000;
 
 	if (slotBegin > time)
 	{

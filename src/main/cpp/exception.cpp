@@ -24,13 +24,12 @@
 #include <log4cxx/helpers/pool.h>
 #include <apr_errno.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 Exception::Exception(const LogString& msg1)
 {
-	std::string m;
-	Transcoder::encode(msg1, m);
+	LOG4CXX_ENCODE_CHAR(m, msg1);
 	size_t len = m.size();
 
 	if (len > MSG_SIZE)
@@ -173,7 +172,7 @@ IOException& IOException::operator=(const IOException& src)
 
 LogString IOException::formatMessage(log4cxx_status_t stat)
 {
-	char err_buff[32];
+	char err_buff[1024];
 	LogString s(LOG4CXX_STR("IO Exception : status code = "));
 	Pool p;
 	StringHelper::toString(stat, p, s);

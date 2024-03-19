@@ -23,9 +23,9 @@
 #include <log4cxx/private/writerappender_priv.h>
 #include <mutex>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
 
 #define _priv static_cast<WriterAppenderPriv*>(m_priv.get())
 
@@ -37,7 +37,7 @@ WriterAppender::WriterAppender() :
 }
 
 WriterAppender::WriterAppender(const LayoutPtr& layout1,
-	log4cxx::helpers::WriterPtr& writer1)
+	LOG4CXX_NS::helpers::WriterPtr& writer1)
 	: AppenderSkeleton (std::make_unique<WriterAppenderPriv>(layout1, writer1))
 {
 	Pool p;
@@ -109,6 +109,7 @@ bool WriterAppender::checkEntryConditions() const
 {
 	static bool warnedClosed = false;
 	static bool warnedNoWriter = false;
+	static bool warnedNoLayout = false;
 
 	if (_priv->closed)
 	{
@@ -123,7 +124,7 @@ bool WriterAppender::checkEntryConditions() const
 
 	if (_priv->writer == 0)
 	{
-		if (warnedNoWriter)
+		if (!warnedNoWriter)
 		{
 			_priv->errorHandler->error(
 				LogString(LOG4CXX_STR("No output stream or file set for the appender named [")) +
@@ -136,9 +137,13 @@ bool WriterAppender::checkEntryConditions() const
 
 	if (_priv->layout == 0)
 	{
-		_priv->errorHandler->error(
-			LogString(LOG4CXX_STR("No layout set for the appender named [")) +
-			_priv->name + LOG4CXX_STR("]."));
+		if (!warnedNoLayout)
+		{
+			_priv->errorHandler->error(
+				LogString(LOG4CXX_STR("No layout set for the appender named [")) +
+				_priv->name + LOG4CXX_STR("]."));
+			warnedNoLayout = true;
+		}
 		return false;
 	}
 
@@ -322,6 +327,6 @@ bool WriterAppender::getImmediateFlush() const
 	return _priv->immediateFlush;
 }
 
-const log4cxx::helpers::WriterPtr WriterAppender::getWriter() const{
+const LOG4CXX_NS::helpers::WriterPtr WriterAppender::getWriter() const{
 	return _priv->writer;
 }

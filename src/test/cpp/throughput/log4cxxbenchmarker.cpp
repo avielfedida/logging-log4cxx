@@ -20,9 +20,12 @@
 #include <log4cxx/patternlayout.h>
 #include <log4cxx/appenderskeleton.h>
 
+#if LOG4CXX_USING_STD_FORMAT
+#include <format>
+#else
 #include <fmt/format.h>
-
-namespace log4cxx
+#endif
+namespace LOG4CXX_NS
 {
 
 class NullWriterAppender : public log4cxx::AppenderSkeleton
@@ -174,7 +177,7 @@ void log4cxxbenchmarker::logStaticStringFMT( int howmany )
 
 	for ( int x = 0; x < howmany; x++ )
 	{
-		LOG4CXX_INFO_FMT( logger, "This is a static string to see what happens");
+		LOG4CXX_INFO_FMT( logger, "This is a static string to see what happens", 0);
 	}
 }
 

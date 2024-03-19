@@ -21,15 +21,22 @@
 #include <log4cxx/logstring.h>
 #include <log4cxx/helpers/object.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
 class Object;
-// Instantiate template pointer type passed as parameter
-LOG4CXX_INSTANTIATE_EXPORTED_PTR(Object);
 LOG4CXX_PTR_DEF(Object);
+}
+}
 
+// Instantiate template pointer type passed as parameter
+LOG4CXX_INSTANTIATE_EXPORTED_PTR(LOG4CXX_NS::helpers::Object);
+
+namespace LOG4CXX_NS
+{
+namespace helpers
+{
 class Properties;
 class Pool;
 }
@@ -79,7 +86,7 @@ class LOG4CXX_EXPORT PropertySetter
 		static void setProperties(const helpers::ObjectPtr& obj,
 			helpers::Properties& properties,
 			const LogString& prefix,
-			log4cxx::helpers::Pool& p);
+			LOG4CXX_NS::helpers::Pool& p);
 
 		/**
 		Set the properites for the object that match the
@@ -87,7 +94,7 @@ class LOG4CXX_EXPORT PropertySetter
 		*/
 		void setProperties(helpers::Properties& properties,
 			const LogString& prefix,
-			log4cxx::helpers::Pool& p);
+			LOG4CXX_NS::helpers::Pool& p);
 
 		/**
 		Set a property on this PropertySetter's Object. If the underlying
@@ -100,9 +107,9 @@ class LOG4CXX_EXPORT PropertySetter
 		*/
 		void setProperty(const LogString& option,
 			const LogString& value,
-			log4cxx::helpers::Pool& p);
+			LOG4CXX_NS::helpers::Pool& p);
 
-		void activate(log4cxx::helpers::Pool& p);
+		void activate(LOG4CXX_NS::helpers::Pool& p);
 }; // class PropertySetter
 }  // namespace config;
 } // namespace log4cxx

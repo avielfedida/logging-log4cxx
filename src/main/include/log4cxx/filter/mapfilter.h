@@ -19,13 +19,16 @@
 
 #include <log4cxx/spi/filter.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace filter
 {
 
 /**
- * A Filter that operates on a Map and can be used like in the following example:
+ * A Filter that operates on the current thread's MDC map.
+
+ For example, to exclude entries from the log where the context
+ has "user.name" set to "test2" and "user.ip" is "127.0.0.1":
  * <pre>
  * &lt;filter class="MapFilter"&gt;
  *     &lt;param name="user.ip"       value="127.0.0.1" /&gt;
@@ -35,7 +38,7 @@ namespace filter
  * &lt;/filter&gt;
  * </pre>
  */
-class LOG4CXX_EXPORT MapFilter: public log4cxx::spi::Filter
+class LOG4CXX_EXPORT MapFilter: public LOG4CXX_NS::spi::Filter
 {
 		typedef std::map < LogString, LogString > KeyVals;
 
@@ -46,14 +49,23 @@ class LOG4CXX_EXPORT MapFilter: public log4cxx::spi::Filter
 		DECLARE_LOG4CXX_OBJECT(MapFilter)
 		BEGIN_LOG4CXX_CAST_MAP()
 		LOG4CXX_CAST_ENTRY(MapFilter)
-		LOG4CXX_CAST_ENTRY_CHAIN(log4cxx::spi::Filter)
+		LOG4CXX_CAST_ENTRY_CHAIN(LOG4CXX_NS::spi::Filter)
 		END_LOG4CXX_CAST_MAP()
 
 		MapFilter();
 		~MapFilter();
 
 		/**
-		Set options
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		Operator | (\ref andOrOne "1") | Or
+		AcceptOnMatch | True,False | True
+		{anyKey} | {anyValue} | -
+
+		\anchor andOrOne (1) If "And", the MDC must contain all configured key-value pairs,
+		otherwise only one configured key-value pair needs to match. 
 		*/
 		void setOption(const LogString& option, const LogString& value) override;
 

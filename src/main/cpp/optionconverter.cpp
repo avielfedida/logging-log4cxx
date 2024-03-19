@@ -37,15 +37,13 @@
 #include <log4cxx/file.h>
 #include <log4cxx/xml/domconfigurator.h>
 #include <log4cxx/logmanager.h>
-#include <apr_general.h>
 #if !defined(LOG4CXX)
 	#define LOG4CXX 1
 #endif
 #include <log4cxx/helpers/aprinitializer.h>
-
-#if APR_HAS_THREADS
 #include <log4cxx/helpers/filewatchdog.h>
-namespace log4cxx
+
+namespace LOG4CXX_NS
 {
 
 class ConfiguratorWatchdog  : public helpers::FileWatchdog
@@ -63,18 +61,17 @@ class ConfiguratorWatchdog  : public helpers::FileWatchdog
     const spi::LoggerRepositoryPtr& hierarchy) with the
     <code>filename</code> to reconfigure log4cxx.
     */
-    void doOnChange()
+    void doOnChange() override
     {
         m_config->doConfigure(file(), LogManager::getLoggerRepository());
     }
 };
 
 }
-#endif
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
 
 
 LogString OptionConverter::convertSpecialChars(const LogString& s)
@@ -417,21 +414,23 @@ void OptionConverter::selectAndConfigure(const File& configFileName,
 
 	LogString filename(configFileName.getPath());
 
+#if LOG4CXX_HAS_DOMCONFIGURATOR
 	if (clazz.empty()
 		&& filename.length() > 4
 		&& StringHelper::equalsIgnoreCase(
 			filename.substr(filename.length() - 4),
 			LOG4CXX_STR(".XML"), LOG4CXX_STR(".xml")))
 	{
-		clazz = log4cxx::xml::DOMConfigurator::getStaticClass().toString();
+		clazz = LOG4CXX_NS::xml::DOMConfigurator::getStaticClass().toString();
 	}
+#endif
 
 	if (!clazz.empty())
 	{
 		LogLog::debug(LOG4CXX_STR("Preferred configurator class: ") + clazz);
 		const Class& clazzObj = Loader::loadClass(clazz);
 		ObjectPtr obj = ObjectPtr(clazzObj.newInstance());
-		configurator = log4cxx::cast<Configurator>(obj);
+		configurator = LOG4CXX_NS::cast<Configurator>(obj);
 
 		if (configurator == 0)
 		{
@@ -445,7 +444,6 @@ void OptionConverter::selectAndConfigure(const File& configFileName,
 		configurator = std::make_shared<PropertyConfigurator>();
 	}
 
-#if APR_HAS_THREADS
 	if (0 < delay)
 	{
 		auto dog = new ConfiguratorWatchdog(configurator, configFileName);
@@ -454,6 +452,5 @@ void OptionConverter::selectAndConfigure(const File& configFileName,
 		dog->start();
 	}
 	else
-#endif
 		configurator->doConfigure(configFileName, hierarchy);
 }

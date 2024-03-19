@@ -21,7 +21,7 @@
 #include <log4cxx/spi/errorhandler.h>
 #include <log4cxx/helpers/object.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -45,8 +45,13 @@ class LOG4CXX_EXPORT OnlyOnceErrorHandler :
 	public:
 		DECLARE_LOG4CXX_OBJECT(OnlyOnceErrorHandler)
 		BEGIN_LOG4CXX_CAST_MAP()
+#if 15 < LOG4CXX_ABI_VERSION
+		LOG4CXX_CAST_ENTRY(OnlyOnceErrorHandler)
+		LOG4CXX_CAST_ENTRY_CHAIN(spi::ErrorHandler)
+#else
 		LOG4CXX_CAST_ENTRY(spi::OptionHandler)
 		LOG4CXX_CAST_ENTRY(spi::ErrorHandler)
+#endif
 		END_LOG4CXX_CAST_MAP()
 
 		OnlyOnceErrorHandler();
@@ -60,9 +65,19 @@ class LOG4CXX_EXPORT OnlyOnceErrorHandler :
 
 
 		/**
-		No options to activate.
+		\copybrief spi::OptionHandler::activateOptions()
+
+		No action is performed in this implementation.
 		*/
 		void activateOptions(helpers::Pool& p) override;
+
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		- | - | -
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 
@@ -93,6 +108,15 @@ class LOG4CXX_EXPORT OnlyOnceErrorHandler :
 		Does not do anything.
 		*/
 		void setBackupAppender(const AppenderPtr& appender) override;
+
+		/**
+		Has an error been reported?
+		*/
+#if 15 < LOG4CXX_ABI_VERSION
+		bool errorReported() const override;
+#else
+		bool errorReported() const;
+#endif
 };
 }  // namespace helpers
 } // namespace log4cxx

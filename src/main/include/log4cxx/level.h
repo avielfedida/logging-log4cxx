@@ -24,7 +24,7 @@
 #include <log4cxx/helpers/object.h>
 #include <mutex>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 /**
  * LOG4CXX_PTR_DEF can't be used to get a smart pointer for Level because we need to override
@@ -126,7 +126,7 @@ class LOG4CXX_EXPORT Level : public helpers::Object
 		 */
 		void toString(std::wstring& name) const;
 #endif
-#if LOG4CXX_UNICHAR_API
+#if LOG4CXX_UNICHAR_API || LOG4CXX_LOGCHAR_IS_UNICHAR
 		/**
 		Convert the string passed as argument to a level. If the
 		conversion fails, then this method returns DEBUG.
@@ -218,7 +218,19 @@ class LOG4CXX_EXPORT Level : public helpers::Object
 			ALL_INT = INT_MIN
 		};
 
+		struct Data
+		{
+			LevelPtr Off;
+			LevelPtr Fatal;
+			LevelPtr Error;
+			LevelPtr Warn;
+			LevelPtr Info;
+			LevelPtr Debug;
+			LevelPtr Trace;
+			LevelPtr All;
+		};
 
+		static const Data& getData();
 		static LevelPtr getAll();
 		static LevelPtr getFatal();
 		static LevelPtr getError();

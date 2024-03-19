@@ -19,6 +19,7 @@
 #include <log4cxx/helpers/loglog.h>
 #include <log4cxx/helpers/optionconverter.h>
 #include <log4cxx/spi/loggingevent.h>
+#include <log4cxx/private/string_c11.h>
 #include <log4cxx/helpers/stringhelper.h>
 #include <log4cxx/helpers/stringtokenizer.h>
 #include <log4cxx/helpers/transcoder.h>
@@ -33,17 +34,17 @@
 #include <apr_strings.h>
 #include <vector>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::net;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::net;
+using namespace LOG4CXX_NS::spi;
 
 #if LOG4CXX_HAVE_LIBESMTP
 	#include <auth-client.h>
 	#include <libesmtp.h>
 #endif
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace net
 {
@@ -123,12 +124,8 @@ class SMTPSession
 			char* buf = p.pstralloc(str.length() + 1);
 			char* current = buf;
 
-			for (LogString::const_iterator iter = str.begin();
-				iter != str.end();
-				iter++)
+			for (unsigned int c : str)
 			{
-				unsigned int c = *iter;
-
 				if (c > 0x7F)
 				{
 					c = '?';
@@ -192,7 +189,7 @@ class SMTPMessage
 			const LogString msg, Pool& p)
 		{
 			message = smtp_add_message(session);
-			current_len = str.length();
+			current_len = msg.length();
 			body = current = toMessage(msg, p);
 			messagecbState = 0;
 			smtp_set_reverse_path(message, toAscii(from, p));
@@ -263,16 +260,13 @@ class SMTPMessage
 			char* retval = p.pstralloc(str.length() + feedCount + 1);
 			char* current = retval;
 			char* startOfLine = current;
+			unsigned int ignoreChar = 0;
 
 			//
 			//    iterator through message
 			//
-			for (LogString::const_iterator iter = str.begin();
-				iter != str.end();
-				iter++)
+			for (unsigned int c : str)
 			{
-				unsigned int c = *iter;
-
 				//
 				//   replace non-ASCII characters with '?'
 				//
@@ -285,14 +279,14 @@ class SMTPMessage
 					//
 					//   replace any stray CR or LF with CRLF
 					//      reset start of line
-					*current++ = 0x0D;
-					*current++ = 0x0A;
-					startOfLine = current;
-					LogString::const_iterator next = iter + 1;
-
-					if (next != str.end() && (*next == 0x0A || *next == 0x0D))
+					if (c == ignoreChar && current == startOfLine)
+						ignoreChar = 0;
+					else
 					{
-						iter++;
+						*current++ = 0x0D;
+						*current++ = 0x0A;
+						startOfLine = current;
+						ignoreChar = (c == 0x0A ? 0x0D : 0x0A);
 					}
 				}
 				else
@@ -446,7 +440,6 @@ bool SMTPAppender::requiresLayout() const
 	return true;
 }
 
-
 LogString SMTPAppender::getFrom() const
 {
 	return _priv->from;
@@ -578,11 +571,9 @@ void SMTPAppender::setOption(const LogString& option,
 
 bool SMTPAppender::asciiCheck(const LogString& value, const LogString& field)
 {
-	for (LogString::const_iterator iter = value.begin();
-		iter != value.end();
-		iter++)
+	for (unsigned int item : value)
 	{
-		if (0x7F < (unsigned int) *iter)
+		if (0x7F < item)
 		{
 			LogLog::warn(field + LOG4CXX_STR(" contains non-ASCII character"));
 			return false;
@@ -676,23 +667,23 @@ bool SMTPAppender::checkEntryConditions()
 {
 #if LOG4CXX_HAVE_LIBESMTP
 
-	if ((to.empty() && cc.empty() && bcc.empty()) || from.empty() || smtpHost.empty())
+	if ((_priv->to.empty() && _priv->cc.empty() && _priv->bcc.empty()) || _priv->from.empty() || _priv->smtpHost.empty())
 	{
-		errorHandler->error(LOG4CXX_STR("Message not configured."));
+		_priv->errorHandler->error(LOG4CXX_STR("Message not configured."));
 		return false;
 	}
 
-	if (evaluator == 0)
+	if (_priv->evaluator == 0)
 	{
-		errorHandler->error(LOG4CXX_STR("No TriggeringEventEvaluator is set for appender [") +
-			name + LOG4CXX_STR("]."));
+		_priv->errorHandler->error(LOG4CXX_STR("No TriggeringEventEvaluator is set for appender [") +
+			_priv->name + LOG4CXX_STR("]."));
 		return false;
 	}
 
 
-	if (layout == 0)
+	if (_priv->layout == 0)
 	{
-		errorHandler->error(LOG4CXX_STR("No layout set for appender named [") + name + LOG4CXX_STR("]."));
+		_priv->errorHandler->error(LOG4CXX_STR("No layout set for appender named [") + _priv->name + LOG4CXX_STR("]."));
 		return false;
 	}
 
@@ -751,29 +742,29 @@ void SMTPAppender::sendBuffer(Pool& p)
 	try
 	{
 		LogString sbuf;
-		layout->appendHeader(sbuf, p);
+		_priv->layout->appendHeader(sbuf, p);
 
-		int len = cb.length();
+		int len = _priv->cb.length();
 
 		for (int i = 0; i < len; i++)
 		{
-			LoggingEventPtr event = cb.get();
-			layout->format(sbuf, event, p);
+			LoggingEventPtr event = _priv->cb.get();
+			_priv->layout->format(sbuf, event, p);
 		}
 
-		layout->appendFooter(sbuf, p);
+		_priv->layout->appendFooter(sbuf, p);
 
-		SMTPSession session(smtpHost, smtpPort, smtpUsername, smtpPassword, p);
+		SMTPSession session(_priv->smtpHost, _priv->smtpPort, _priv->smtpUsername, _priv->smtpPassword, p);
 
-		SMTPMessage message(session, from, to, cc,
-			bcc, subject, sbuf, p);
+		SMTPMessage message(session, _priv->from, _priv->to, _priv->cc,
+			_priv->bcc, _priv->subject, sbuf, p);
 
 		session.send(p);
 
 	}
 	catch (std::exception& e)
 	{
-		LogLog::error(LOG4CXX_STR("Error occured while sending e-mail notification."), e);
+		_priv->errorHandler->error(LOG4CXX_STR("Error occured while sending e-mail to [") + _priv->smtpHost + LOG4CXX_STR("]."), e, 0);
 	}
 
 #endif
@@ -787,12 +778,12 @@ LogString SMTPAppender::getEvaluatorClass()
 	return _priv->evaluator == 0 ? LogString() : _priv->evaluator->getClass().getName();
 }
 
-log4cxx::spi::TriggeringEventEvaluatorPtr SMTPAppender::getEvaluator() const
+LOG4CXX_NS::spi::TriggeringEventEvaluatorPtr SMTPAppender::getEvaluator() const
 {
 	return _priv->evaluator;
 }
 
-void SMTPAppender::setEvaluator(log4cxx::spi::TriggeringEventEvaluatorPtr& trigger)
+void SMTPAppender::setEvaluator(LOG4CXX_NS::spi::TriggeringEventEvaluatorPtr& trigger)
 {
 	_priv->evaluator = trigger;
 }
@@ -820,7 +811,7 @@ for the SMTPAppender.
 void SMTPAppender::setEvaluatorClass(const LogString& value)
 {
 	ObjectPtr obj = ObjectPtr(Loader::loadClass(value).newInstance());
-	_priv->evaluator = log4cxx::cast<TriggeringEventEvaluator>(obj);
+	_priv->evaluator = LOG4CXX_NS::cast<TriggeringEventEvaluator>(obj);
 }
 
 int SMTPAppender::getBufferSize() const

@@ -21,10 +21,10 @@
 #include <log4cxx/spi/location/locationinfo.h>
 #include <log4cxx/helpers/stringhelper.h>
 
-using namespace log4cxx;
-using namespace log4cxx::pattern;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::pattern;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(ColorEndPatternConverter)
 
@@ -37,7 +37,7 @@ ColorEndPatternConverter::ColorEndPatternConverter() :
 PatternConverterPtr ColorEndPatternConverter::newInstance(
 	const std::vector<LogString>& /* options */)
 {
-	static PatternConverterPtr instance = std::make_shared<ColorEndPatternConverter>();
+	static WideLife<PatternConverterPtr> instance = std::make_shared<ColorEndPatternConverter>();
 	return instance;
 }
 

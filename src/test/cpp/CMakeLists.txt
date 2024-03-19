@@ -44,11 +44,13 @@ set(ALL_LOG4CXX_TESTS
     encodingtest
     fileappendertest
     filetestcase
+    hexdumptestcase
     hierarchytest
     hierarchythresholdtestcase
     jsonlayouttest
     l7dtestcase
     leveltestcase
+    levelchangetestcase
     loggertestcase
     mdctestcase
     minimumtestcase
@@ -66,6 +68,9 @@ endif()
 if(${ENABLE_MULTITHREAD_TEST})
     set(ALL_LOG4CXX_TESTS ${ALL_LOG4CXX_TESTS} multithreadtest)
 endif()
+if(${LOG4CXX_EVENTS_AT_EXIT})
+    set(ALL_LOG4CXX_TESTS ${ALL_LOG4CXX_TESTS} eventsatexittest)
+endif()
 foreach(fileName IN LISTS ALL_LOG4CXX_TESTS)
     add_executable(${fileName} "${fileName}.cpp")
 endforeach()
@@ -73,8 +78,11 @@ target_sources(rollingfileappendertestcase PRIVATE fileappendertestcase.cpp)
 
 # Tests defined in subdirectories
 add_subdirectory(helpers)
-add_subdirectory(customlogger)
-if(LOG4CXX_HAS_ODBC OR WIN32)
+if(LOG4CXX_DOMCONFIGURATOR_SUPPORT)
+    add_subdirectory(customlogger)
+    add_subdirectory(xml)
+endif()
+if(HAS_ODBC)
     add_subdirectory(db)
 endif()
 add_subdirectory(defaultinit)
@@ -86,7 +94,6 @@ endif()
 add_subdirectory(pattern)
 add_subdirectory(rolling)
 add_subdirectory(varia)
-add_subdirectory(xml)
 add_subdirectory(throughput)
 add_subdirectory(benchmark)
 
@@ -103,19 +110,33 @@ else()
 endif()
 
 get_filename_component(UNIT_TEST_WORKING_DIR ../resources ABSOLUTE)
+if(LOG4CXX_CFSTRING)
+  set(CFSTR_TESTS filetestcase messagebuffertest leveltestcase streamtestcase transcodertestcase)
+endif()
 foreach(testName IN LISTS ALL_LOG4CXX_TESTS)
+    if (${testName} IN_LIST CFSTR_TESTS)
+      if(APPLE)
+        target_compile_options(${testName} PRIVATE "-fconstant-cfstrings")
+        target_link_libraries(${testName} PRIVATE "-framework CoreFoundation")
+      else()
+        target_link_libraries(${testName} PRIVATE MockCoreFoundation)
+      endif()
+    endif()
     target_compile_definitions(${testName} PRIVATE ${TEST_COMPILE_DEFINITIONS} ${LOG4CXX_COMPILE_DEFINITIONS} ${APR_COMPILE_DEFINITIONS} ${APR_UTIL_COMPILE_DEFINITIONS} )
     target_include_directories(${testName} PRIVATE ${CMAKE_CURRENT_LIST_DIR} $<TARGET_PROPERTY:log4cxx,INCLUDE_DIRECTORIES>)
-    target_link_libraries(${testName} PRIVATE testingFramework testingUtilities log4cxx ${APR_LIBRARIES} ${APR_SYSTEM_LIBS} Threads::Threads)
+    target_link_libraries(${testName} PRIVATE testingFramework testingUtilities log4cxx ${APR_LIBRARIES} ${APR_SYSTEM_LIBS} Threads::Threads ${ODBC_LIBRARIES} )
+    if(HAS_LIBESMTP)
+      target_link_libraries(${testName} PRIVATE ${ESMTP_LIBRARIES})
+    endif()
     add_test(NAME ${testName}
         COMMAND ${testName} -v
         WORKING_DIRECTORY ${UNIT_TEST_WORKING_DIR}
     )
     set_tests_properties( ${testName} PROPERTIES TIMEOUT 120 )
-
     if(WIN32)
         set_target_properties(${testName} PROPERTIES
           VS_DEBUGGER_WORKING_DIRECTORY ${UNIT_TEST_WORKING_DIR}
+          FOLDER UnitTests
         )
         set_target_properties(${testName} PROPERTIES
           VS_DEBUGGER_COMMAND_ARGUMENTS "-v"

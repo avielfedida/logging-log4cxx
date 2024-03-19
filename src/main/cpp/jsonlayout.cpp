@@ -26,9 +26,9 @@
 
 #include <string.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
 
 IMPLEMENT_LOG4CXX_OBJECT(JSONLayout)
 
@@ -39,7 +39,9 @@ struct JSONLayout::JSONLayoutPrivate
 		prettyPrint(false),
 		dateFormat(),
 		ppIndentL1(LOG4CXX_STR("  ")),
-		ppIndentL2(LOG4CXX_STR("    ")) {}
+		ppIndentL2(LOG4CXX_STR("    ")),
+		expectedPatternLength(100),
+		threadInfo(false) {}
 
 	// Print no location info by default
 	bool locationInfo; //= false
@@ -49,6 +51,12 @@ struct JSONLayout::JSONLayoutPrivate
 
 	LogString ppIndentL1;
 	LogString ppIndentL2;
+
+	// Expected length of a formatted event excluding the message text
+	size_t expectedPatternLength;
+
+	// Thread info is not included by default
+	bool threadInfo; //= false
 };
 
 JSONLayout::JSONLayout() :
@@ -78,6 +86,16 @@ bool JSONLayout::getPrettyPrint() const
 	return m_priv->prettyPrint;
 }
 
+void JSONLayout::setThreadInfo(bool newValue)
+{
+	m_priv->threadInfo = newValue;
+}
+
+bool JSONLayout::getThreadInfo() const
+{
+	return m_priv->threadInfo;
+}
+
 LogString JSONLayout::getContentType() const
 {
 	return LOG4CXX_STR("application/json");
@@ -85,7 +103,7 @@ LogString JSONLayout::getContentType() const
 
 void JSONLayout::activateOptions(helpers::Pool& /* p */)
 {
-
+	m_priv->expectedPatternLength = getFormattedEventCharacterCount() * 2;
 }
 
 void JSONLayout::setOption(const LogString& option, const LogString& value)
@@ -95,17 +113,23 @@ void JSONLayout::setOption(const LogString& option, const LogString& value)
 	{
 		setLocationInfo(OptionConverter::toBoolean(value, false));
 	}
-
-	if (StringHelper::equalsIgnoreCase(option,
+	else if (StringHelper::equalsIgnoreCase(option,
+			LOG4CXX_STR("THREADINFO"), LOG4CXX_STR("threadinfo")))
+	{
+		setThreadInfo(OptionConverter::toBoolean(value, false));
+	}
+	else if (StringHelper::equalsIgnoreCase(option,
 			LOG4CXX_STR("PRETTYPRINT"), LOG4CXX_STR("prettyprint")))
 	{
 		setPrettyPrint(OptionConverter::toBoolean(value, false));
 	}
 }
+
 void JSONLayout::format(LogString& output,
 	const spi::LoggingEventPtr& event,
 	Pool& p) const
 {
+	output.reserve(m_priv->expectedPatternLength + event->getMessage().size());
 	output.append(LOG4CXX_STR("{"));
 	output.append(m_priv->prettyPrint ? LOG4CXX_EOL : LOG4CXX_STR(" "));
 
@@ -121,6 +145,19 @@ void JSONLayout::format(LogString& output,
 	appendQuotedEscapedString(output, timestamp);
 	output.append(LOG4CXX_STR(","));
 	output.append(m_priv->prettyPrint ? LOG4CXX_EOL : LOG4CXX_STR(" "));
+
+	if (m_priv->threadInfo)
+	{
+		if (m_priv->prettyPrint)
+		{
+			output.append(m_priv->ppIndentL1);
+		}
+		appendQuotedEscapedString(output, LOG4CXX_STR("thread"));
+		output.append(LOG4CXX_STR(": "));
+		appendQuotedEscapedString(output, event->getThreadName());
+		output.append(LOG4CXX_STR(","));
+		output.append(m_priv->prettyPrint ? LOG4CXX_EOL : LOG4CXX_STR(" "));
+	}
 
 	if (m_priv->prettyPrint)
 	{
@@ -172,6 +209,11 @@ void JSONLayout::format(LogString& output,
 
 void JSONLayout::appendQuotedEscapedString(LogString& buf,
 	const LogString& input) const
+{
+	appendItem(input, buf);
+}
+
+void JSONLayout::appendItem(const LogString& input, LogString& buf)
 {
 	/* add leading quote */
 	buf.push_back(0x22);

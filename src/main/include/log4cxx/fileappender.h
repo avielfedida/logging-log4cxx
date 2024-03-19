@@ -24,7 +24,7 @@
 #include <log4cxx/file.h>
 #include <log4cxx/helpers/pool.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -112,12 +112,34 @@ class LOG4CXX_EXPORT FileAppender : public WriterAppender
 		LogString getFile() const;
 
 		/**
-		<p>Sets and <i>opens</i> the file where the log output will
+		\copybrief AppenderSkeleton::activateOptions()
+
+		Sets and <i>opens</i> the file where the log output will
 		go. The specified file must be writable.
 
-		<p>If there was already an opened file, then the previous file
-		is closed first.*/
+		If there was already an opened file, then the previous file
+		is closed first.
+		*/
 		void activateOptions(helpers::Pool& p) override;
+
+		/**
+		\copybrief AppenderSkeleton::setOption()
+
+		Supported options | Supported values | Default value
+		:-------------- | :----------------: | :---------------:
+		FileName | {any} | -
+		Append | True,False | True
+		BufferedIO | True,False | False
+		ImmediateFlush | True,False | False
+		BufferSize | (\ref fileSz1 "1") | 8 KB
+
+		\anchor fileSz1 (1) An integer in the range 0 - 2^63.
+		 You can specify the value with the suffixes "KB", "MB" or "GB" so that the integer is
+		 interpreted being expressed respectively in kilobytes, megabytes
+		 or gigabytes. For example, the value "10KB" will be interpreted as 10240.
+
+		\sa AppenderSkeleton::setOption()
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**
@@ -171,7 +193,7 @@ class LOG4CXX_EXPORT FileAppender : public WriterAppender
 		static LogString stripDuplicateBackslashes(const LogString& name);
 
 	protected:
-		void activateOptionsInternal(log4cxx::helpers::Pool& p);
+		void activateOptionsInternal(LOG4CXX_NS::helpers::Pool& p);
 
 		/**
 		Sets and <i>opens</i> the file where the log output will
@@ -195,7 +217,7 @@ class LOG4CXX_EXPORT FileAppender : public WriterAppender
 		*/
 		void setFileInternal(const LogString& file, bool append,
 			bool bufferedIO, size_t bufferSize,
-			log4cxx::helpers::Pool& p);
+			LOG4CXX_NS::helpers::Pool& p);
 
 		void setFileInternal(const LogString& file);
 

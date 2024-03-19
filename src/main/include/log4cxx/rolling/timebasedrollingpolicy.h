@@ -25,7 +25,7 @@
 #include <log4cxx/helpers/outputstream.h>
 #include <functional>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 namespace rolling
@@ -153,6 +153,14 @@ class LOG4CXX_EXPORT TimeBasedRollingPolicy : public virtual RollingPolicyBase,
 	public:
 		TimeBasedRollingPolicy();
 		virtual ~TimeBasedRollingPolicy();
+
+		/**
+		\copybrief RollingPolicyBase::activateOptions()
+
+		Logs a warning if an option is not valid.
+
+		\sa RollingPolicyBase::activateOptions()
+		*/
 		void activateOptions(helpers::Pool& ) override;
 
 		void setMultiprocess(bool multiprocess);
@@ -190,27 +198,41 @@ class LOG4CXX_EXPORT TimeBasedRollingPolicy : public virtual RollingPolicyBase,
 			const LogString& filename,
 			size_t fileLength) override;
 
+		/**
+		\copybrief RollingPolicyBase::setOption()
+
+		Supported options | Supported values | Default value
+		:-------------- | :----------------: | :---------------:
+		ThrowIOExceptionOnForkFailure | True,False | True
+
+		\sa RollingPolicyBase::setOption()
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 
 	protected:
-		log4cxx::pattern::PatternMap getFormatSpecifiers() const override;
+		/**
+		 * A map from "d" and "date" to a date conversion formatter.
+		 *
+		 * \sa FileDatePatternConverter
+		 */
+		LOG4CXX_NS::pattern::PatternMap getFormatSpecifiers() const override;
 
 	private:
 
 		/**
 		 * Generate mmap file
 		 */
-		int createMMapFile(const std::string& lastfilename, log4cxx::helpers::Pool& pool);
+		int createMMapFile(const std::string& lastfilename, LOG4CXX_NS::helpers::Pool& pool);
 
 		/**
 		 *  Detect if the mmap file is empty
 		 */
-		bool isMapFileEmpty(log4cxx::helpers::Pool& pool);
+		bool isMapFileEmpty(LOG4CXX_NS::helpers::Pool& pool);
 
 		/**
 		 *   init MMapFile
 		 */
-		void initMMapFile(const LogString& lastFileName, log4cxx::helpers::Pool& pool);
+		void initMMapFile(const LogString& lastFileName, LOG4CXX_NS::helpers::Pool& pool);
 
 		/**
 		 *   lock MMapFile
@@ -225,7 +247,7 @@ class LOG4CXX_EXPORT TimeBasedRollingPolicy : public virtual RollingPolicyBase,
 		/**
 		 *   create MMapFile/lockFile
 		 */
-		const std::string createFile(const std::string& filename, const std::string& suffix, log4cxx::helpers::Pool& pool);
+		const std::string createFile(const std::string& filename, const std::string& suffix, LOG4CXX_NS::helpers::Pool& pool);
 
 };
 

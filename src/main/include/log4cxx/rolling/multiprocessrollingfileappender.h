@@ -25,7 +25,7 @@
 #include <log4cxx/rolling/rollingpolicy.h>
 #include <log4cxx/rolling/action.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace rolling
 {
@@ -47,6 +47,13 @@ class LOG4CXX_EXPORT MultiprocessRollingFileAppender : public FileAppender
 	public:
 		MultiprocessRollingFileAppender();
 
+		/**
+		\copybrief FileAppender::activateOptions()
+
+		Activate the attached TriggeringPolicy and RollingPolicy.
+
+		\sa FileAppender::activateOptions()
+		*/
 		void activateOptions(helpers::Pool&) override;
 
 
@@ -64,7 +71,7 @@ class LOG4CXX_EXPORT MultiprocessRollingFileAppender : public FileAppender
 		   <code>File</code> is truncated with no backup files created.
 
 		 */
-		bool rollover(helpers::Pool& p) override;
+		bool rollover(helpers::Pool& p);
 
 	protected:
 
@@ -73,7 +80,7 @@ class LOG4CXX_EXPORT MultiprocessRollingFileAppender : public FileAppender
 		*/
 		void subAppend(const spi::LoggingEventPtr& event, helpers::Pool& p) override;
 
-		bool rolloverInternal(log4cxx::helpers::Pool& p);
+		bool rolloverInternal(LOG4CXX_NS::helpers::Pool& p);
 
 	public:
 
@@ -138,7 +145,7 @@ class LOG4CXX_EXPORT MultiprocessRollingFileAppender : public FileAppender
 		 * re-open the latest file when its own handler has been renamed
 		 * @return void
 		 */
-		void reopenLatestFile(log4cxx::helpers::Pool& p);
+		void reopenLatestFile(LOG4CXX_NS::helpers::Pool& p);
 
 		friend class CountingOutputStream;
 

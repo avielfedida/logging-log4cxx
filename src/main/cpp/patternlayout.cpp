@@ -43,22 +43,27 @@
 #include <log4cxx/pattern/levelpatternconverter.h>
 #include <log4cxx/pattern/relativetimepatternconverter.h>
 #include <log4cxx/pattern/threadpatternconverter.h>
+#include <log4cxx/pattern/mdcpatternconverter.h>
 #include <log4cxx/pattern/ndcpatternconverter.h>
 #include <log4cxx/pattern/propertiespatternconverter.h>
 #include <log4cxx/pattern/throwableinformationpatternconverter.h>
 #include <log4cxx/pattern/threadusernamepatternconverter.h>
 
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
-using namespace log4cxx::pattern;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::pattern;
 
 struct PatternLayout::PatternLayoutPrivate
 {
-	PatternLayoutPrivate() {}
-	PatternLayoutPrivate(const LogString& pattern) :
-		conversionPattern(pattern) {}
+	PatternLayoutPrivate()
+		: expectedPatternLength(100)
+		{}
+	PatternLayoutPrivate(const LogString& pattern)
+		: conversionPattern(pattern)
+		, expectedPatternLength(100)
+		{}
 
 	/**
 	 * Conversion pattern.
@@ -81,6 +86,9 @@ struct PatternLayout::PatternLayoutPrivate
 	LogString m_infoColor = LOG4CXX_STR("\\x1B[32m"); //green
 	LogString m_debugColor = LOG4CXX_STR("\\x1B[36m"); //cyan;
 	LogString m_traceColor = LOG4CXX_STR("\\x1B[34m"); //blue;
+
+	// Expected length of a formatted event excluding the message text
+	size_t expectedPatternLength;
 };
 
 IMPLEMENT_LOG4CXX_OBJECT(PatternLayout)
@@ -114,6 +122,7 @@ void PatternLayout::format(LogString& output,
 	const spi::LoggingEventPtr& event,
 	Pool& pool) const
 {
+	output.reserve(m_priv->expectedPatternLength + event->getMessage().size());
 	std::vector<FormattingInfoPtr>::const_iterator formatterIter =
 		m_priv->patternFields.begin();
 
@@ -186,25 +195,21 @@ void PatternLayout::activateOptions(Pool&)
 	//   strip out any pattern converters that don't handle LoggingEvents
 	//
 	//
-	for (std::vector<PatternConverterPtr>::const_iterator converterIter = converters.begin();
-		converterIter != converters.end();
-		converterIter++)
+	for (auto const& converterItem : converters)
 	{
-		LoggingEventPatternConverterPtr eventConverter =
-			log4cxx::cast<LoggingEventPatternConverter>(*converterIter);
-
-		if (eventConverter != NULL)
+		if (auto eventConverter = LOG4CXX_NS::cast<LoggingEventPatternConverter>(converterItem))
 		{
 			m_priv->patternConverters.push_back(eventConverter);
 		}
 	}
+	m_priv->expectedPatternLength = getFormattedEventCharacterCount() * 2;
 }
 
 #define RULES_PUT(spec, cls) \
 	specs.insert(PatternMap::value_type(LogString(LOG4CXX_STR(spec)), cls ::newInstance))
 
 
-log4cxx::pattern::PatternMap PatternLayout::getFormatSpecifiers()
+LOG4CXX_NS::pattern::PatternMap PatternLayout::getFormatSpecifiers()
 {
 	PatternMap specs;
 	RULES_PUT("c", LoggerPatternConverter);
@@ -253,6 +258,7 @@ log4cxx::pattern::PatternMap PatternLayout::getFormatSpecifiers()
 	RULES_PUT("ndc", NDCPatternConverter);
 
 	RULES_PUT("X", PropertiesPatternConverter);
+	RULES_PUT("J", MDCPatternConverter);
 	RULES_PUT("properties", PropertiesPatternConverter);
 
 	RULES_PUT("throwable", ThrowableInformationPatternConverter);

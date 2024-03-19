@@ -23,8 +23,8 @@
 
 #include "apr_network_io.h"
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(InetAddress)
 
@@ -121,7 +121,11 @@ std::vector<InetAddressPtr> InetAddress::getAllByName(const LogString& host)
 */
 InetAddressPtr InetAddress::getByName(const LogString& host)
 {
-	return getAllByName(host)[0];
+	InetAddressPtr result;
+	auto address = getAllByName(host);
+	if (!address.empty())
+		result = address.front();
+	return result;
 }
 
 /** Returns the IP address string "%d.%d.%d.%d".
@@ -158,7 +162,8 @@ InetAddressPtr InetAddress::anyAddress()
 LogString InetAddress::toString() const
 {
 	LogString rv(getHostName());
-	rv.append(LOG4CXX_STR("/"));
+	if (!rv.empty())
+		rv.append(LOG4CXX_STR("/"));
 	rv.append(getHostAddress());
 	return rv;
 }

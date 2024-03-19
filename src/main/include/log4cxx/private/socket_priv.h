@@ -20,18 +20,22 @@
 
 #include <log4cxx/helpers/socket.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
 
-struct Socket::SocketPrivate{
-    /** The IP address of the remote end of this socket. */
-    InetAddressPtr address;
+struct Socket::SocketPrivate
+{
+	SocketPrivate(const InetAddressPtr& addr = InetAddressPtr(), int _port = 0)
+		: address(addr), port(_port) {}
+	virtual ~SocketPrivate() = default;
+	/** The IP address of the remote end of this socket. */
+	InetAddressPtr address;
 
-    /** The port number on the remote host to which
-    this socket is connected. */
-    int port;
+	/** The port number on the remote host to which
+	this socket is connected. */
+	int port;
 };
 
 }

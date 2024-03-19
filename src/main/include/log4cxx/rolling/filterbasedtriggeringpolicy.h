@@ -21,7 +21,10 @@
 #include <log4cxx/rolling/triggeringpolicy.h>
 #include <log4cxx/spi/filter.h>
 
-namespace log4cxx
+// Instantiate template pointer types passed as parameters
+LOG4CXX_INSTANTIATE_EXPORTED_PTR(LOG4CXX_NS::spi::Filter);
+
+namespace LOG4CXX_NS
 {
 
 class File;
@@ -34,9 +37,6 @@ class Pool;
 
 namespace rolling
 {
-
-// Instantiate template pointer types passed as parameters
-LOG4CXX_INSTANTIATE_EXPORTED_PTR(log4cxx::spi::Filter);
 
 /**
  * FilterBasedTriggeringPolicy determines if rolling should be triggered
@@ -101,10 +101,19 @@ class LOG4CXX_EXPORT FilterBasedTriggeringPolicy : public TriggeringPolicy
 		spi::FilterPtr& getFilter();
 
 		/**
-		 *  Prepares the instance for use.
+		\copybrief spi::OptionHandler::activateOptions()
+
+		Activates all attached filters.
 		 */
 		void activateOptions(helpers::Pool&) override;
 
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		- | - | -
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 };
 

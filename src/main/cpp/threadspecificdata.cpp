@@ -24,12 +24,12 @@
 #endif
 #include <log4cxx/helpers/aprinitializer.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 struct ThreadSpecificData::ThreadSpecificDataPrivate{
-	log4cxx::NDC::Stack ndcStack;
-	log4cxx::MDC::Map mdcMap;
+	LOG4CXX_NS::NDC::Stack ndcStack;
+	LOG4CXX_NS::MDC::Map mdcMap;
 };
 
 ThreadSpecificData::ThreadSpecificData()
@@ -42,19 +42,19 @@ ThreadSpecificData::~ThreadSpecificData()
 }
 
 
-log4cxx::NDC::Stack& ThreadSpecificData::getStack()
+LOG4CXX_NS::NDC::Stack& ThreadSpecificData::getStack()
 {
 	return m_priv->ndcStack;
 }
 
-log4cxx::MDC::Map& ThreadSpecificData::getMap()
+LOG4CXX_NS::MDC::Map& ThreadSpecificData::getMap()
 {
 	return m_priv->mdcMap;
 }
 
 ThreadSpecificData& ThreadSpecificData::getDataNoThreads()
 {
-	static ThreadSpecificData noThreadData;
+	static WideLife<ThreadSpecificData> noThreadData;
 	return noThreadData;
 }
 
@@ -64,6 +64,9 @@ ThreadSpecificData* ThreadSpecificData::getCurrentData()
 	void* pData = NULL;
 	apr_threadkey_private_get(&pData, APRInitializer::getTlsKey());
 	return (ThreadSpecificData*) pData;
+#elif LOG4CXX_HAS_THREAD_LOCAL
+	thread_local ThreadSpecificData data;
+	return &data;
 #else
 	return &getDataNoThreads();
 #endif
@@ -167,6 +170,8 @@ ThreadSpecificData* ThreadSpecificData::createCurrentData()
 	}
 
 	return newData;
+#elif LOG4CXX_HAS_THREAD_LOCAL
+	return getCurrentData();
 #else
 	return 0;
 #endif

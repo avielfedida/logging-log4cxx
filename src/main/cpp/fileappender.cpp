@@ -29,9 +29,9 @@
 #include <log4cxx/private/fileappender_priv.h>
 #include <mutex>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
 
 IMPLEMENT_LOG4CXX_OBJECT(FileAppender)
 
@@ -128,7 +128,7 @@ void FileAppender::setOption(const LogString& option,
 	else if (StringHelper::equalsIgnoreCase(option, LOG4CXX_STR("BUFFEREDIO"), LOG4CXX_STR("bufferedio")))
 	{
 		std::lock_guard<std::recursive_mutex> lock(_priv->mutex);
-		_priv->bufferedIO = OptionConverter::toBoolean(value, true);
+		_priv->bufferedIO = OptionConverter::toBoolean(value, false);
 	}
 	else if (StringHelper::equalsIgnoreCase(option, LOG4CXX_STR("IMMEDIATEFLUSH"), LOG4CXX_STR("immediateflush")))
 	{

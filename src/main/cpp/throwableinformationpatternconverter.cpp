@@ -22,10 +22,10 @@
 #include <log4cxx/helpers/stringhelper.h>
 #include <log4cxx/private/patternconverter_priv.h>
 
-using namespace log4cxx;
-using namespace log4cxx::pattern;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::pattern;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 struct ThrowableInformationPatternConverter::ThrowableInformationPatternConverterPrivate :
 	public PatternConverterPrivate
@@ -56,11 +56,11 @@ PatternConverterPtr ThrowableInformationPatternConverter::newInstance(
 {
 	if (options.size() > 0 && options[0].compare(LOG4CXX_STR("short")) == 0)
 	{
-		static PatternConverterPtr shortConverter = std::make_shared<ThrowableInformationPatternConverter>(true);
+		static WideLife<PatternConverterPtr> shortConverter = std::make_shared<ThrowableInformationPatternConverter>(true);
 		return shortConverter;
 	}
 
-	static PatternConverterPtr converter = std::make_shared<ThrowableInformationPatternConverter>(false);
+	static WideLife<PatternConverterPtr> converter = std::make_shared<ThrowableInformationPatternConverter>(false);
 	return converter;
 }
 

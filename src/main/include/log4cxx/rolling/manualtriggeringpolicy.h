@@ -20,7 +20,7 @@
 
 #include <log4cxx/rolling/triggeringpolicy.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 class File;
@@ -67,7 +67,20 @@ class LOG4CXX_EXPORT ManualTriggeringPolicy : public TriggeringPolicy
 			const LogString& filename,
 			size_t fileLength) override;
 
+		/**
+		\copybrief spi::OptionHandler::activateOptions()
+
+		No action is performed in this implementation.
+		*/
 		void activateOptions(helpers::Pool&) override;
+
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		- | - | -
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 };
 }

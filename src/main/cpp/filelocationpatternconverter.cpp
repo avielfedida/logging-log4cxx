@@ -19,9 +19,9 @@
 #include <log4cxx/spi/loggingevent.h>
 #include <log4cxx/spi/location/locationinfo.h>
 
-using namespace log4cxx;
-using namespace log4cxx::pattern;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::pattern;
+using namespace LOG4CXX_NS::spi;
 using namespace helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(FileLocationPatternConverter)
@@ -35,7 +35,7 @@ FileLocationPatternConverter::FileLocationPatternConverter() :
 PatternConverterPtr FileLocationPatternConverter::newInstance(
 	const std::vector<LogString>& /* options */ )
 {
-	static PatternConverterPtr instance = std::make_shared<FileLocationPatternConverter>();
+	static WideLife<PatternConverterPtr> instance = std::make_shared<FileLocationPatternConverter>();
 	return instance;
 }
 

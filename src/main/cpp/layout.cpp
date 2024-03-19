@@ -17,8 +17,8 @@
 #include <log4cxx/logstring.h>
 #include <log4cxx/layout.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(Layout)
 
@@ -30,6 +30,23 @@ LogString Layout::getContentType() const
 	return LOG4CXX_STR("text/plain");
 }
 
-void Layout::appendHeader(LogString&, log4cxx::helpers::Pool&) {}
+void Layout::appendHeader(LogString&, LOG4CXX_NS::helpers::Pool&) {}
 
-void Layout::appendFooter(LogString&, log4cxx::helpers::Pool&) {}
+void Layout::appendFooter(LogString&, LOG4CXX_NS::helpers::Pool&) {}
+
+/**
+ * The expected length of a formatted event excluding the message text
+ */
+size_t Layout::getFormattedEventCharacterCount() const
+{
+	auto exampleEvent = std::make_shared<spi::LoggingEvent>
+		( LOG4CXX_STR("example.logger")
+		, Level::getDebug()
+		, LOG4CXX_LOCATION
+		, LogString()
+		);
+	LogString text;
+	Pool pool;
+	format(text, exampleEvent, pool);
+	return text.size();
+}

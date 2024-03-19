@@ -23,8 +23,10 @@ be usable on any platform supported by APR. Apache Log4cxx is licensed under
 the [Apache License], an open source license certified by the [Open Source Initiative].
 
 Experience indicates that almost every large application needs runtime configurable logging.
-Informational, warning and error log messages should be saved
-in persistent medium available for study at a later time.
+In the usual configuration, informational, warning and error log messages
+are saved to a persistent medium so they are available for study at a later time.
+With Log4cxx it is possible to activate additional logging output or disable some output
+for one or more modules of the running application by changing the configuration file.
 
 In the development cycle, logging can be an auditing tool.
 Debugging log output can be activated for an aspect of the application
@@ -50,15 +52,17 @@ The configuration also allows you to control the destination of log messages.
 They can be sent to a file, a remote socket server, event loggers as well as the console,
 with support for directing particular messages to one or more destinations.
 
-More information on how to use Log4cxx can be found on the [usage] page.  For
-a more general overview of what logging is, the logging services committee
-has a [logging overview] page that explains more of what logging is and
+The [example programs page] will let you to quickly start using Log4cxx.
+The components of Log4cxx are described on the [concepts page].
+For a more general overview, the logging services committee
+provides a [logging overview page] that explains more of what logging is and
 when to use it.
 
 [Apache log4j]:https://logging.apache.org/log4j/2.x/
 [Apache Portable Runtime]:https://apr.apache.org/
 [Apache License]:https://www.apache.org/licenses/
-[usage]:usage.html
+[example programs page]:quick-start.html
+[concepts page]:concepts.html
 [Open Source Initiative]:https://opensource.org/
 [Performance]:performance.html
-[logging overview]:https://logging.apache.org/what-is-logging.html
+[logging overview page]:https://logging.apache.org/what-is-logging.html

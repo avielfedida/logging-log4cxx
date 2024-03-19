@@ -23,10 +23,10 @@
 
 #include <iterator>
 
-using namespace log4cxx;
-using namespace log4cxx::pattern;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::pattern;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 #define priv static_cast<PropertiesPatternConverterPrivate*>(m_priv.get())
 
@@ -56,7 +56,7 @@ PatternConverterPtr PropertiesPatternConverter::newInstance(
 {
 	if (options.size() == 0)
 	{
-		static PatternConverterPtr def = std::make_shared<PropertiesPatternConverter>(
+		static WideLife<PatternConverterPtr> def = std::make_shared<PropertiesPatternConverter>(
 				LOG4CXX_STR("Properties"), LOG4CXX_STR(""));
 		return def;
 	}
@@ -76,16 +76,12 @@ void PropertiesPatternConverter::format(
 	{
 		toAppendTo.append(1, (logchar) 0x7B /* '{' */);
 
-		LoggingEvent::KeySet keySet(event->getMDCKeySet());
-
-		for (LoggingEvent::KeySet::const_iterator iter = keySet.begin();
-			iter != keySet.end();
-			iter++)
+		for (auto const& item : event->getMDCKeySet())
 		{
 			toAppendTo.append(1, (logchar) 0x7B /* '{' */);
-			toAppendTo.append(*iter);
+			toAppendTo.append(item);
 			toAppendTo.append(1, (logchar) 0x2C /* ',' */);
-			event->getMDC(*iter, toAppendTo);
+			event->getMDC(item, toAppendTo);
 			toAppendTo.append(1, (logchar) 0x7D /* '}' */);
 		}
 

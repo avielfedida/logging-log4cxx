@@ -23,10 +23,10 @@
 #include <log4cxx/pattern/formattinginfo.h>
 #include <log4cxx/pattern/patternparser.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
-LOG4CXX_LIST_DEF(LoggingEventPatternConverterList, log4cxx::pattern::LoggingEventPatternConverterPtr);
-LOG4CXX_LIST_DEF(FormattingInfoList, log4cxx::pattern::FormattingInfoPtr);
+LOG4CXX_LIST_DEF(LoggingEventPatternConverterList, LOG4CXX_NS::pattern::LoggingEventPatternConverterPtr);
+LOG4CXX_LIST_DEF(FormattingInfoList, LOG4CXX_NS::pattern::FormattingInfoPtr);
 
 /**
  * A flexible layout configurable with pattern string.
@@ -88,7 +88,7 @@ LOG4CXX_LIST_DEF(FormattingInfoList, log4cxx::pattern::FormattingInfoPtr);
  *  <tr>
  *      <td align="center"><strong>c</strong></td>
  *      <td>
- *          Used to output the logger of the logging event. The logger conversion specifier
+ *          Used to output the name of the logger generating the logging event. The <strong>c</strong> conversion specifier
  *          can be optionally followed by <em>precision specifier</em>, that is a decimal
  *          constant in brackets.
  *          <p>
@@ -159,8 +159,10 @@ LOG4CXX_LIST_DEF(FormattingInfoList, log4cxx::pattern::FormattingInfoPtr);
  *  <tr>
  *      <td align="center"><strong>m</strong></td>
  *      <td>
- *          Used to output the application supplied message associated with the logging
- *          event.
+ *          Used to output the application supplied message associated with the logging event.
+ *          To output in a quoted context, add set of braces containing the quote character.
+ *          Any quote character in the message is augmented with a second quote character.
+ *          For example, use %m{'} in an SQL insert statement.
  *      </td>
  *  </tr>
  *  <tr>
@@ -222,10 +224,21 @@ LOG4CXX_LIST_DEF(FormattingInfoList, log4cxx::pattern::FormattingInfoPtr);
  *      <td align="center"><strong>X</strong></td>
  *      <td>
  *          Used to output the MDC (mapped diagnostic context) associated with the thread that
- *          generated the logging event. The <strong>X</strong> conversion character <em>must</em> be
- *          followed by the key for the map placed between braces, as in <strong>%X{clientNumber}</strong>
- *          where <code>clientNumber</code> is the key. The value in the MDC corresponding to
+ *          generated the logging event. All key/value pairs are output, each inside <strong>{}</strong> unless
+ *          the <strong>X</strong> is followed by a key placed between braces, as in <strong>%X{clientNumber}</strong>
+ *          where <code>clientNumber</code> is the key. In this case the value in the MDC corresponding to
  *          the key will be output.
+ *          <p>See MDC class for more details.</p>
+ *      </td>
+ *  </tr>
+ *  <tr>
+ *      <td align="center"><strong>J</strong></td>
+ *      <td>
+ *          Used to output JSON key/value pairs of all MDC (mapped diagnostic context)
+ *          entries associated with the thread that generated the logging event.
+ *          To output in a quoted context, add set of braces containing the quote character.
+ *          Any quote character in the message is augmented with a second quote character.
+ *          For example, use %J{'} in an SQL insert statement.
  *          <p>See MDC class for more details.</p>
  *      </td>
  *  </tr>
@@ -454,8 +467,9 @@ class LOG4CXX_EXPORT PatternLayout : public Layout
 		~PatternLayout();
 
 		/**
-		 * Set the <strong>ConversionPattern</strong> option. This is the string which
-		 * controls formatting and consists of a mix of literal content and
+		 * Use \c conversionPattern as to control formatting.
+		 *
+		 * The pattern can be a mix of literal content and
 		 * conversion specifiers.
 		 */
 		void setConversionPattern(const LogString& conversionPattern);
@@ -466,10 +480,36 @@ class LOG4CXX_EXPORT PatternLayout : public Layout
 		LogString getConversionPattern() const;
 
 		/**
-		 * Call createPatternParser
+		\copybrief spi::OptionHandler::activateOptions()
+
+		Calls createPatternParser
 		 */
 		void activateOptions(helpers::Pool& p) override;
 
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		ConversionPattern | {any} | \%m\%n
+		FatalColor | (\ref validColors "1") | magenta
+		ErrorColor | (\ref validColors "1") | red
+		WarnColor | (\ref validColors "1") | yellow
+		InfoColor | (\ref validColors "1") | green
+		DebugColor | (\ref validColors "1") | cyan
+		TraceColor | (\ref validColors "1") | blue
+
+		\anchor validColors (1) The word <code>None</code> or
+		<a href="https://en.wikipedia.org/wiki/ANSI_escape_code">valid ANSI escape sequence</a>.
+		A prefix of <code>\\x1b</code> will be replaced with the <code>ESC</code> character.
+		The character prefix <code>ESC</code> and suffix <code>m</code> will be added
+		to the value if it does not begin with <code>\\x1b</code>.
+		Color names can be combined with graphic modes using a <code>|</code> separator.
+		Enclose the color name in <code>bg()</code> to set the background.
+		Enclose the color name in <code>fg()</code> to set the foreground.
+
+		\sa setConversionPattern
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**
@@ -490,7 +530,7 @@ class LOG4CXX_EXPORT PatternLayout : public Layout
 			helpers::Pool& pool) const override;
 
 	protected:
-		virtual log4cxx::pattern::PatternMap getFormatSpecifiers();
+		virtual LOG4CXX_NS::pattern::PatternMap getFormatSpecifiers();
 
 	private:
 		pattern::PatternConverterPtr createColorStartPatternConverter(const std::vector<LogString>& options);

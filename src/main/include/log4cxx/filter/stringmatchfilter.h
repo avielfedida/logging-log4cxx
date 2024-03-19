@@ -20,7 +20,7 @@
 
 #include <log4cxx/spi/filter.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace filter
 {
@@ -62,8 +62,13 @@ class LOG4CXX_EXPORT StringMatchFilter : public spi::Filter
 		~StringMatchFilter();
 
 		/**
-		Set options
-		*/
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		StringToMatch | {any} | -
+		AcceptOnMatch | True,False | True
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 
 		void setStringToMatch(const LogString& stringToMatch1);

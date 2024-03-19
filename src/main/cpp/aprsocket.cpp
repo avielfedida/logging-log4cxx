@@ -23,11 +23,15 @@
 #include "apr_network_io.h"
 #include "apr_signal.h"
 
-using log4cxx::helpers::APRSocket;
+namespace LOG4CXX_NS
+{
+namespace helpers
+{
 
-struct APRSocket::APRSocketPriv : public log4cxx::helpers::Socket::SocketPrivate {
-	APRSocketPriv() :
-		socket(nullptr)
+struct APRSocket::APRSocketPriv : public Socket::SocketPrivate {
+	APRSocketPriv(InetAddressPtr& address, int port)
+		: Socket::SocketPrivate(address, port)
+		, socket(nullptr)
 	{}
 
 	APRSocketPriv(apr_socket_t* sock, apr_pool_t* p) :
@@ -42,7 +46,7 @@ struct APRSocket::APRSocketPriv : public log4cxx::helpers::Socket::SocketPrivate
 #define _priv static_cast<APRSocketPriv*>(m_priv.get())
 
 APRSocket::APRSocket(InetAddressPtr& address, int port) :
-	Socket(std::make_unique<APRSocketPriv>()){
+	Socket(std::make_unique<APRSocketPriv>(address, port)){
 	apr_status_t status =
 		apr_socket_create(&_priv->socket, APR_INET, SOCK_STREAM,
 			APR_PROTO_TCP, _priv->pool.getAPRPool());
@@ -154,3 +158,6 @@ void APRSocket::close()
 		_priv->socket = 0;
 	}
 }
+
+} //namespace helpers
+} //namespace log4cxx

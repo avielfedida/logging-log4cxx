@@ -25,7 +25,7 @@
 #include <log4cxx/rolling/rollingpolicy.h>
 #include <log4cxx/rolling/action.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace rolling
 {
@@ -127,13 +127,37 @@ class LOG4CXX_EXPORT RollingFileAppender : public FileAppender
 
 		LogString makeFileNamePattern(const LogString& datePattern);
 
+		/**
+		\copybrief FileAppender::setOption()
+
+		Supported options | Supported values | Default value
+		:-------------- | :----------------: | :---------------:
+		FileDatePattern | (\ref dateChars "1") | -
+		MaxBackupIndex | 1-12 | 0
+		MaxFileSize | (\ref fileSz "2") | 10 MB
+
+		\anchor dateChars (1) A pattern compatible with
+		  java.text.SimpleDateFormat, "ABSOLUTE", "DATE" or "ISO8601".
+		  For example, "HH:mm:ss,SSS", "dd MMM yyyy HH:mm:ss,SSS" or "DATE".
+
+		\anchor fileSz (2) An integer in the range 0 - 2^63.
+		 You can specify the value with the suffixes "KB", "MB" or "GB" so that the integer is
+		 interpreted being expressed respectively in kilobytes, megabytes
+		 or gigabytes. For example, the value "10KB" will be interpreted as 10240.
+
+		\sa FileAppender::setOption()
+		*/
 		void setOption( const LogString& option, const LogString& value ) override;
 
-		/** Prepares RollingFileAppender for use. */
+		/**
+		\copybrief FileAppender::activateOptions()
+
+		\sa FileAppender::activateOptions()
+		*/
 		void activateOptions(helpers::Pool& pool ) override;
 
 		/**
-		   Implements the usual roll over behaviour.
+		   Implements the configured roll over behaviour.
 
 		   <p>If <code>MaxBackupIndex</code> is positive, then files
 		   {<code>File.1</code>, ..., <code>File.MaxBackupIndex -1</code>}
@@ -146,7 +170,7 @@ class LOG4CXX_EXPORT RollingFileAppender : public FileAppender
 		   <code>File</code> is truncated with no backup files created.
 
 		 */
-		bool rollover(log4cxx::helpers::Pool& p);
+		bool rollover(LOG4CXX_NS::helpers::Pool& p);
 
 	protected:
 
@@ -155,7 +179,7 @@ class LOG4CXX_EXPORT RollingFileAppender : public FileAppender
 		*/
 		void subAppend(const spi::LoggingEventPtr& event, helpers::Pool& p) override;
 
-		bool rolloverInternal(log4cxx::helpers::Pool& p);
+		bool rolloverInternal(LOG4CXX_NS::helpers::Pool& p);
 
 	public:
 		/**

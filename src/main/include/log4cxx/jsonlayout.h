@@ -23,7 +23,7 @@
 #include <log4cxx/spi/loggingevent.h>
 
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 /**
 This layout outputs events in a JSON dictionary.
@@ -40,9 +40,10 @@ class LOG4CXX_EXPORT JSONLayout : public Layout
 		void appendSerializedNDC(LogString& buf,
 			const spi::LoggingEventPtr& event) const;
 		void appendSerializedLocationInfo(LogString& buf,
-			const spi::LoggingEventPtr& event, log4cxx::helpers::Pool& p) const;
+			const spi::LoggingEventPtr& event, LOG4CXX_NS::helpers::Pool& p) const;
 
 	public:
+		static void appendItem(const LogString& item, LogString& toAppendTo);
 		DECLARE_LOG4CXX_OBJECT(JSONLayout)
 		BEGIN_LOG4CXX_CAST_MAP()
 		LOG4CXX_CAST_ENTRY(JSONLayout)
@@ -82,16 +83,38 @@ class LOG4CXX_EXPORT JSONLayout : public Layout
 		*/
 		bool getPrettyPrint() const;
 
+		/**
+		Set thread info output mode to \c newValue.
+
+		@param newValue <code>true</code> to include a thread identifier.
+		*/
+		void setThreadInfo(bool newValue);
+
+		/**
+		Is a thread identifier included in the output?
+		*/
+		bool getThreadInfo() const;
 
 		/**
 		Returns the content type output by this layout, i.e "application/json".
 		*/
 		LogString getContentType() const override;
 
+		/**
+		\copybrief spi::OptionHandler::activateOptions()
+
+		No action is performed in this implementation.
+		*/
 		void activateOptions(helpers::Pool& /* p */) override;
 
 		/**
-		Set options
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		LocationInfo | True,False | false
+		ThreadInfo | True,False | false
+		PrettyPrint | True,False | false
 		*/
 		void setOption(const LogString& option, const LogString& value) override;
 

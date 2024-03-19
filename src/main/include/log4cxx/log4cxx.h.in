@@ -25,6 +25,7 @@
  */
 
 
+#define LOG4CXX_ABI_VERSION @log4cxx_ABI_VER@
 #define LOG4CXX_VERSION_MAJOR @log4cxx_VERSION_MAJOR@
 #define LOG4CXX_VERSION_MINOR @log4cxx_VERSION_MINOR@
 #define LOG4CXX_VERSION_PATCH @log4cxx_VERSION_PATCH@
@@ -50,6 +51,9 @@
 #define LOG4CXX_CFSTRING_API @CFSTRING_API@
 #define LOG4CXX_HAS_NETWORKING @NETWORKING_SUPPORT@
 #define LOG4CXX_HAS_MULTIPROCESS_ROLLING_FILE_APPENDER @MULTIPROCESS_RFA@
+#define LOG4CXX_EVENTS_AT_EXIT @EVENTS_AT_EXIT@
+#define LOG4CXX_HAS_DOMCONFIGURATOR @DOMCONFIGURATOR_SUPPORT@
+
 
 #define LOG4CXX_USE_GLOBAL_SCOPE_TEMPLATE 0
 #define LOG4CXX_LOGSTREAM_ADD_NOP 0
@@ -91,11 +95,15 @@ __pragma( warning( pop ) )
 #else                          // Linking against a DLL?
 #define LOG4CXX_EXPORT __declspec(dllimport)
 #endif // !LOG4CXX_STATIC
-#else // !defined(_WIN32) || !defined(_MSC_VER)
-#define LOG4CXX_EXPORT
-#endif // !defined(_WIN32) || !defined(_MSC_VER)
+#elif defined(__GNUC__) && 4 <= __GNUC__ && 15 < LOG4CXX_ABI_VERSION
+  #define LOG4CXX_EXPORT __attribute__ ((visibility ("default")))
+#else // !(defined(_WIN32) && defined(_MSC_VER)) || LOG4CXX_ABI_VERSION <= 15 || __GNUC__ < 4
+  #define LOG4CXX_EXPORT
+#endif
 
-namespace log4cxx {
+#define LOG4CXX_NS @LOG4CXX_NS@
+
+namespace LOG4CXX_NS {
 
 /**
  * log4cxx_time_t - holds the number of microseconds since 1970-01-01
@@ -114,5 +122,16 @@ typedef int log4cxx_status_t;
 LOG4CXX_EXPORT uint32_t libraryVersion();
 
 }
+
+#if @LOG4CXX_DECLARE_DEFAULT_NS_ALIAS@
+namespace log4cxx = LOG4CXX_NS;
+#endif
+
+#define LOG4CXX_USING_STD_FORMAT @LOG4CXX_USE_STANDARD_FORMAT@
+#if !defined(LOG4CXX_FORMAT_NS) && LOG4CXX_USING_STD_FORMAT
+#define LOG4CXX_FORMAT_NS std
+#elif !defined(LOG4CXX_FORMAT_NS)
+#define LOG4CXX_FORMAT_NS fmt
+#endif
 
 #endif

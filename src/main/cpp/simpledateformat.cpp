@@ -29,8 +29,8 @@
 #include <log4cxx/private/log4cxx_private.h>
 #include <log4cxx/helpers/pool.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 using namespace std;
 
@@ -53,7 +53,7 @@ using namespace std;
 	#define PUT_FACET(facet, os, time, spec) facet.put(os, os, os.fill(), time, spec)
 #endif
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -92,7 +92,7 @@ class PatternToken
 		 */
 		virtual void format(LogString& s,
 			const apr_time_exp_t& date,
-			log4cxx::helpers::Pool& p) const = 0;
+			LOG4CXX_NS::helpers::Pool& p) const = 0;
 
 	protected:
 
@@ -643,7 +643,7 @@ class RFC822TimeZoneToken : public PatternToken
 }
 
 
-using namespace log4cxx::helpers::SimpleDateFormatImpl;
+using namespace LOG4CXX_NS::helpers::SimpleDateFormatImpl;
 
 void SimpleDateFormat::addToken(const logchar spec, const int repeat, const std::locale* locale,
 	std::vector < PatternToken* >& pattern )
@@ -821,9 +821,9 @@ SimpleDateFormat::SimpleDateFormat( const LogString& fmt ) : m_priv(std::make_un
 	parsePattern( fmt, NULL, m_priv->pattern );
 #endif
 
-	for ( PatternTokenList::iterator iter = m_priv->pattern.begin(); iter != m_priv->pattern.end(); iter++ )
+	for (auto const& item : m_priv->pattern)
 	{
-		( * iter )->setTimeZone( m_priv->timeZone );
+		item->setTimeZone( m_priv->timeZone );
 	}
 }
 
@@ -831,18 +831,18 @@ SimpleDateFormat::SimpleDateFormat( const LogString& fmt, const std::locale* loc
 {
 	parsePattern( fmt, locale, m_priv->pattern );
 
-	for ( PatternTokenList::iterator iter = m_priv->pattern.begin(); iter != m_priv->pattern.end(); iter++ )
+	for (auto const& item : m_priv->pattern)
 	{
-		( * iter )->setTimeZone( m_priv->timeZone );
+		item->setTimeZone( m_priv->timeZone );
 	}
 }
 
 
 SimpleDateFormat::~SimpleDateFormat()
 {
-	for ( PatternTokenList::iterator iter = m_priv->pattern.begin(); iter != m_priv->pattern.end(); iter++ )
+	for (auto item : m_priv->pattern)
 	{
-		delete * iter;
+		delete item;
 	}
 }
 

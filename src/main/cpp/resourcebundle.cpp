@@ -22,17 +22,14 @@
 #include <log4cxx/helpers/transcoder.h>
 #include <log4cxx/helpers/locale.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(ResourceBundle)
 
 ResourceBundlePtr ResourceBundle::getBundle(const LogString& baseName,
 	const Locale& locale)
 {
-	LogString bundleName;
-	PropertyResourceBundlePtr resourceBundle, previous;
-
 	std::vector<LogString> bundlesNames;
 
 	if (!locale.getVariant().empty())
@@ -58,12 +55,9 @@ ResourceBundlePtr ResourceBundle::getBundle(const LogString& baseName,
 
 	bundlesNames.push_back(baseName);
 
-	for (std::vector<LogString>::iterator it = bundlesNames.begin();
-		it != bundlesNames.end(); it++)
+	PropertyResourceBundlePtr resourceBundle, previous;
+	for (auto bundleName : bundlesNames)
 	{
-
-		bundleName = *it;
-
 		PropertyResourceBundlePtr current;
 
 		// Try loading a class which implements ResourceBundle
@@ -71,21 +65,21 @@ ResourceBundlePtr ResourceBundle::getBundle(const LogString& baseName,
 		{
 			const Class& classObj = Loader::loadClass(bundleName);
 			ObjectPtr obj = ObjectPtr(classObj.newInstance());
-			current = log4cxx::cast<PropertyResourceBundle>(obj);
+			current = LOG4CXX_NS::cast<PropertyResourceBundle>(obj);
 		}
 		catch (ClassNotFoundException&)
 		{
-			current = 0;
+			current.reset();
 		}
 
 		// No class found, then try to create a PropertyResourceBundle from a file
-		if (current == 0)
+		if (!current)
 		{
 			InputStreamPtr bundleStream =
 				Loader::getResourceAsStream(
 					bundleName + LOG4CXX_STR(".properties"));
 
-			if (bundleStream == 0)
+			if (!bundleStream)
 			{
 				continue;
 			}
@@ -101,7 +95,7 @@ ResourceBundlePtr ResourceBundle::getBundle(const LogString& baseName,
 		}
 
 		// Add the new resource bundle to the hierarchy
-		if (resourceBundle == 0)
+		if (!resourceBundle)
 		{
 			resourceBundle = current;
 			previous = current;
@@ -114,7 +108,7 @@ ResourceBundlePtr ResourceBundle::getBundle(const LogString& baseName,
 	}
 
 	// no resource bundle found at all, then throw exception
-	if (resourceBundle == 0)
+	if (!resourceBundle)
 	{
 		throw MissingResourceException(
 			((LogString) LOG4CXX_STR("Missing resource bundle ")) + baseName);

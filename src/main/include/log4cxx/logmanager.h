@@ -22,7 +22,7 @@
 #include <vector>
 #include <log4cxx/spi/repositoryselector.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 class Logger;
 typedef std::shared_ptr<Logger> LoggerPtr;
@@ -38,9 +38,9 @@ typedef std::shared_ptr<LoggerFactory> LoggerFactoryPtr;
 * Use the <code>LogManager</code> class to retreive Logger
 * instances or to operate on the current
 * {@link log4cxx::spi::LoggerRepository LoggerRepository}.
-* When the <code>LogManager</code> class is loaded
-* into memory the default initialization procedure is inititated.
-    */
+* DefaultConfigurator::configure will be used to configure LoggerRepository
+* when the first logger is retrieved if it is not already configured.
+*/
 class LOG4CXX_EXPORT LogManager
 {
 	private:
@@ -223,6 +223,19 @@ class LOG4CXX_EXPORT LogManager
 		to their default.
 		*/
 		static void resetConfiguration();
+
+		/**
+		Remove the \c name Logger from the hierarchy.
+
+		Note: The \c name Logger must be retrieved from the hierarchy
+		\b after any subsequent configuration file change
+		for the newly loaded settings to be used.
+
+		@param name The logger to remove.
+		@param ifNotUsed If true and use_count() indicates there are other references, do not remove the Logger and return false.
+		@returns true if \c name Logger was removed from the hierarchy.
+		*/
+		static bool removeLogger(const LogString& name, bool ifNotUsed = true);
 }; // class LogManager
 }  // namespace log4cxx
 

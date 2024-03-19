@@ -26,12 +26,12 @@
 #include <log4cxx/pattern/formattinginfo.h>
 #include <log4cxx/pattern/patternparser.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace rolling
 {
-LOG4CXX_LIST_DEF(PatternConverterList, log4cxx::pattern::PatternConverterPtr);
-LOG4CXX_LIST_DEF(FormattingInfoList, log4cxx::pattern::FormattingInfoPtr);
+LOG4CXX_LIST_DEF(PatternConverterList, LOG4CXX_NS::pattern::PatternConverterPtr);
+LOG4CXX_LIST_DEF(FormattingInfoList, LOG4CXX_NS::pattern::FormattingInfoPtr);
 
 /**
  * Implements methods common to most, it not all, rolling
@@ -56,9 +56,34 @@ class LOG4CXX_EXPORT RollingPolicyBase :
 	public:
 		RollingPolicyBase();
 		virtual ~RollingPolicyBase();
-		void activateOptions(log4cxx::helpers::Pool& p) override;
-		virtual log4cxx::pattern::PatternMap getFormatSpecifiers() const = 0;
 
+		/**
+		\copybrief RollingPolicy::activateOptions()
+
+		Logs a warning if FileNamePattern is not set.
+
+		\sa RollingPolicy::activateOptions()
+		*/
+		void activateOptions(helpers::Pool& p) override;
+
+		/**
+		A map from a name to the object implementing the (date or index) formatting.
+		*/
+		virtual pattern::PatternMap getFormatSpecifiers() const = 0;
+
+
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		:-------------- | :----------------: | :---------------:
+		FileNamePattern | (\ref legalChars "^") | -
+		CreateIntermediateDirectories | True,False | False
+
+		\anchor legalChars (^) Legal file name characters plus any conversion specifier supported by the concrete class.
+
+		\sa getFormatSpecifiers()
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**
@@ -95,8 +120,8 @@ class LOG4CXX_EXPORT RollingPolicyBase :
 		void formatFileName(const helpers::ObjectPtr& obj,
 			LogString& buf, helpers::Pool& p) const;
 
-		log4cxx::pattern::PatternConverterPtr getIntegerPatternConverter() const;
-		log4cxx::pattern::PatternConverterPtr getDatePatternConverter() const;
+		LOG4CXX_NS::pattern::PatternConverterPtr getIntegerPatternConverter() const;
+		LOG4CXX_NS::pattern::PatternConverterPtr getDatePatternConverter() const;
 };
 
 LOG4CXX_PTR_DEF(RollingPolicyBase);

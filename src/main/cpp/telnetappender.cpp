@@ -19,18 +19,15 @@
 #include <log4cxx/helpers/loglog.h>
 #include <log4cxx/helpers/optionconverter.h>
 #include <log4cxx/helpers/stringhelper.h>
-#include <apr_thread_proc.h>
-#include <apr_atomic.h>
-#include <apr_strings.h>
 #include <log4cxx/helpers/charsetencoder.h>
 #include <log4cxx/helpers/bytebuffer.h>
 #include <log4cxx/helpers/threadutility.h>
 #include <log4cxx/private/appenderskeleton_priv.h>
 #include <mutex>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::net;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::net;
 
 IMPLEMENT_LOG4CXX_OBJECT(TelnetAppender)
 
@@ -47,7 +44,7 @@ struct TelnetAppender::TelnetAppenderPriv : public AppenderSkeletonPrivate
 	int port;
 	ConnectionList connections;
 	LogString encoding;
-	log4cxx::helpers::CharsetEncoderPtr encoder;
+	LOG4CXX_NS::helpers::CharsetEncoderPtr encoder;
 	std::unique_ptr<helpers::ServerSocket> serverSocket;
 	std::thread sh;
 	size_t activeConnections;
@@ -126,14 +123,12 @@ void TelnetAppender::close()
 
 	SocketPtr nullSocket;
 
-	for (ConnectionList::iterator iter = _priv->connections.begin();
-		iter != _priv->connections.end();
-		iter++)
+	for (auto& item : _priv->connections)
 	{
-		if (*iter != 0)
+		if (item)
 		{
-			(*iter)->close();
-			*iter = nullSocket;
+			item->close();
+			item = nullSocket;
 		}
 	}
 
@@ -159,21 +154,19 @@ void TelnetAppender::close()
 
 void TelnetAppender::write(ByteBuffer& buf)
 {
-	for (ConnectionList::iterator iter = _priv->connections.begin();
-		iter != _priv->connections.end();
-		iter++)
+	for (auto& item :_priv->connections)
 	{
-		if (*iter != 0)
+		if (item)
 		{
 			try
 			{
 				ByteBuffer b(buf.current(), buf.remaining());
-				(*iter)->write(b);
+				item->write(b);
 			}
 			catch (Exception&)
 			{
 				// The client has closed the connection, remove it from our list:
-				*iter = 0;
+				item.reset();
 				_priv->activeConnections--;
 			}
 		}
@@ -270,13 +263,11 @@ void TelnetAppender::acceptConnections()
 				//
 				std::lock_guard<std::recursive_mutex> lock(_priv->mutex);
 
-				for (ConnectionList::iterator iter = _priv->connections.begin();
-					iter != _priv->connections.end();
-					iter++)
+				for (auto& item : _priv->connections)
 				{
-					if (*iter == NULL)
+					if (!item)
 					{
-						*iter = newClient;
+						item = newClient;
 						_priv->activeConnections++;
 
 						break;

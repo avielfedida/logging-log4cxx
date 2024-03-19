@@ -184,7 +184,7 @@ abts_suite* abts_add_suite(abts_suite* suite, const char* suite_name_full)
 	}
 
 	reset_status();
-	fprintf(stdout, "%-20s:  ", subsuite->name.c_str());
+	fprintf(stdout, (verbose ? "%s:\n" :"%-20s:  "), subsuite->name.c_str());
 	update_status();
 	fflush(stdout);
 
@@ -209,6 +209,11 @@ void abts_run_test(abts_suite* ts, const char* name, test_func f, void* value)
 	ss->num_test++;
 	update_status();
 
+	if (verbose)
+	{
+		fprintf(stdout, "  %s\n", name);
+		fflush(stdout);
+	}
 	f(&tc, value);
 
 	if (tc.failed)
@@ -244,15 +249,15 @@ static int report(abts_suite* suite)
 	}
 
 	dptr = suite->head;
-	fprintf(stdout, "%-15s\t\tTotal\tFail\tFailed %%\n", "Failed Tests");
-	fprintf(stdout, "===================================================\n");
+	fprintf(stdout, "%-35s\t\tTotal\tFail\tFailed %%\n", "Failed Tests");
+	fprintf(stdout, "=======================================================================\n");
 
 	while (dptr != NULL)
 	{
 		if (dptr->failed.size() != 0)
 		{
 			float percent = ((float)dptr->failed.size() / (float)dptr->num_test);
-			fprintf(stdout, "%-15s\t\t%5d\t%4d\t%6.2f%%\n", dptr->name.c_str(),
+			fprintf(stdout, "%-35s\t\t%5d\t%4d\t%6.2f%%\n", dptr->name.c_str(),
 				dptr->num_test, (int)dptr->failed.size(), percent * 100);
 			for( const char* failed_name : dptr->failed ){
 				fprintf(stdout, "  %s\n", failed_name );

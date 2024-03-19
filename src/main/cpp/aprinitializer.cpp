@@ -20,16 +20,16 @@
 #endif
 #include <log4cxx/helpers/aprinitializer.h>
 #include <apr_pools.h>
-#include <apr_atomic.h>
 #include <assert.h>
 #include <log4cxx/helpers/threadspecificdata.h>
-#include <apr_thread_mutex.h>
 #include <apr_thread_proc.h>
 #include <log4cxx/helpers/filewatchdog.h>
 #include <log4cxx/helpers/date.h>
+#include <list>
+#include <algorithm>
 
-using namespace log4cxx::helpers;
-using namespace log4cxx;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS;
 
 bool APRInitializer::isDestructed = false;
 
@@ -51,11 +51,21 @@ struct APRInitializer::APRInitializerPrivate{
 
 namespace
 {
-extern "C" void tlsDestruct(void* ptr)
+void tlsDestructImpl(void* ptr)
 {
 	delete ((ThreadSpecificData*) ptr);
 }
+}
 
+#if LOG4CXX_ABI_VERSION <= 15
+extern "C" void tlsDestruct(void* ptr)
+{
+	return tlsDestructImpl(ptr);
+}
+#endif
+
+namespace
+{
 // The first object created and the last object destroyed
 struct apr_environment
 {
@@ -71,15 +81,14 @@ struct apr_environment
 
 }
 
+
 APRInitializer::APRInitializer() :
 	m_priv(std::make_unique<APRInitializerPrivate>())
 {
 	apr_pool_create(&m_priv->p, NULL);
-	apr_atomic_init(m_priv->p);
 	m_priv->startTime = Date::currentTime();
 #if APR_HAS_THREADS
-	apr_status_t stat = apr_threadkey_private_create(&m_priv->tlsKey, tlsDestruct, m_priv->p);
-	assert(stat == APR_SUCCESS);
+	apr_status_t stat = apr_threadkey_private_create(&m_priv->tlsKey, tlsDestructImpl, m_priv->p);
 	assert(stat == APR_SUCCESS);
 #endif
 }
@@ -96,12 +105,11 @@ APRInitializer::~APRInitializer()
 
 void APRInitializer::stopWatchDogs()
 {
-#if APR_HAS_THREADS
 	std::unique_lock<std::mutex> lock(m_priv->mutex);
-#endif
 
 	while (!m_priv->watchdogs.empty())
 	{
+		m_priv->watchdogs.back()->stop();
 		delete m_priv->watchdogs.back();
 		m_priv->watchdogs.pop_back();
 	}
@@ -114,8 +122,8 @@ void APRInitializer::unregisterAll()
 
 APRInitializer& APRInitializer::getInstance()
 {
-	static apr_environment env;
-	static APRInitializer init;
+	static WideLife<apr_environment> env;
+	static WideLife<APRInitializer> init;
 	return init;
 }
 
@@ -138,44 +146,29 @@ apr_threadkey_t* APRInitializer::getTlsKey()
 void APRInitializer::registerCleanup(FileWatchdog* watchdog)
 {
 	APRInitializer& instance(getInstance());
-#if APR_HAS_THREADS
 	std::unique_lock<std::mutex> lock(instance.m_priv->mutex);
-#endif
 	instance.m_priv->watchdogs.push_back(watchdog);
 }
 
 void APRInitializer::unregisterCleanup(FileWatchdog* watchdog)
 {
 	APRInitializer& instance(getInstance());
-#if APR_HAS_THREADS
 	std::unique_lock<std::mutex> lock(instance.m_priv->mutex);
-#endif
 
-	for (std::list<FileWatchdog*>::iterator iter = instance.m_priv->watchdogs.begin();
-		iter != instance.m_priv->watchdogs.end();
-		iter++)
-	{
-		if (*iter == watchdog)
-		{
-			instance.m_priv->watchdogs.erase(iter);
-			return;
-		}
-	}
+	auto iter = std::find(instance.m_priv->watchdogs.begin(), instance.m_priv->watchdogs.end(), watchdog);
+	if (iter != instance.m_priv->watchdogs.end())
+		instance.m_priv->watchdogs.erase(iter);
 }
 
 void APRInitializer::addObject(size_t key, const ObjectPtr& pObject)
 {
-#if APR_HAS_THREADS
 	std::unique_lock<std::mutex> lock(m_priv->mutex);
-#endif
 	m_priv->objects[key] = pObject;
 }
 
 const ObjectPtr& APRInitializer::findOrAddObject(size_t key, std::function<ObjectPtr()> creator)
 {
-#if APR_HAS_THREADS
 	std::unique_lock<std::mutex> lock(m_priv->mutex);
-#endif
 	auto pItem = m_priv->objects.find(key);
 	if (m_priv->objects.end() == pItem)
 		pItem = m_priv->objects.emplace(key, creator()).first;

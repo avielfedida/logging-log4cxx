@@ -21,7 +21,7 @@
 #include <log4cxx/appenderskeleton.h>
 #include <log4cxx/helpers/syslogwriter.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace net
 {
@@ -76,10 +76,27 @@ class LOG4CXX_EXPORT SyslogAppender : public AppenderSkeleton
 		void append(const spi::LoggingEventPtr& event, helpers::Pool& p) override;
 
 		/**
-		This method returns immediately as options are activated when they
-		are set.
+		\copybrief AppenderSkeleton::activateOptions()
+
+		No action is performed in this implementation.
 		*/
 		void activateOptions(helpers::Pool& p) override;
+
+		/**
+		\copybrief AppenderSkeleton::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		SysLogHost |  (\ref sysLogAddress "1") | -
+		Facility | (\ref facility "2") | -
+		MaxMessageLength | {int} | 1024
+
+		\anchor sysLogAddress (1) A valid internet address, optionally with the port number as a suffix after a ':'.
+
+		\anchor facility (2) One of kern,user,mail,daemon,auth,syslog,lpr,news,uucp,cron,ftp,local0,local1,local2,local3,local4,local5,local6,local7
+
+		\sa AppenderSkeleton::setOption()
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**

@@ -15,7 +15,14 @@
 # limitations under the License.
 #
 
-set(ALL_LOG4CXX_EXAMPLES auto-configured console delayedloop stream trivial custom-appender MyApp1 MyApp2)
+set(ALL_LOG4CXX_EXAMPLES auto-configured console delayedloop stream ndc-example custom-appender MyApp1 MyApp2)
+if(NOT LOG4CXX_DOMCONFIGURATOR_SUPPORT)
+    list(REMOVE_ITEM ALL_LOG4CXX_EXAMPLES delayedloop custom-appender)
+endif()
+
+if(LOG4CXX_QT_SUPPORT)
+  list(APPEND ALL_LOG4CXX_EXAMPLES MyApp-qt)
+endif(LOG4CXX_QT_SUPPORT)
 if( WIN32 )
     include(win32_target_environment_path)
     get_target_environment_path(ESCAPED_PATH)
@@ -29,27 +36,29 @@ else()
 endif()
 
 foreach(exampleName IN LISTS ALL_LOG4CXX_EXAMPLES)
-    add_executable(${exampleName} ${exampleName}.cpp)
+    set(PROGRAM_NAME "${exampleName}")
+    add_executable(${PROGRAM_NAME} ${exampleName}.cpp)
     if(${exampleName} STREQUAL MyApp2)
-        target_sources(${exampleName} PRIVATE com/foo/config2.cpp com/foo/bar.cpp)
+        target_sources(${PROGRAM_NAME} PRIVATE com/foo/config2.cpp com/foo/bar.cpp)
+    endif()
+    if(${exampleName} STREQUAL MyApp-qt)
+        target_sources(${PROGRAM_NAME} PRIVATE com/foo/config-qt.cpp com/foo/bar-qt.cpp)
+        target_link_libraries(${PROGRAM_NAME} PRIVATE log4cxx-qt)
     endif()
     if(${exampleName} STREQUAL auto-configured)
-        target_sources(${exampleName} PRIVATE com/foo/config3.cpp )
+        target_sources(${PROGRAM_NAME} PRIVATE com/foo/config3.cpp )
     endif()
-    target_compile_definitions(${exampleName} PRIVATE ${EXAMPLE_COMPILE_DEFINITIONS} ${LOG4CXX_COMPILE_DEFINITIONS} ${APR_COMPILE_DEFINITIONS} ${APR_UTIL_COMPILE_DEFINITIONS} )
-    target_include_directories(${exampleName} PRIVATE ${CMAKE_CURRENT_LIST_DIR} $<TARGET_PROPERTY:log4cxx,INCLUDE_DIRECTORIES>)
-    target_link_libraries(${exampleName} PRIVATE log4cxx ${APR_UTIL_LIBRARIES} ${EXPAT_LIBRARIES} ${APR_LIBRARIES} ${APR_SYSTEM_LIBS})
+    target_compile_definitions(${PROGRAM_NAME} PRIVATE ${EXAMPLE_COMPILE_DEFINITIONS} ${LOG4CXX_COMPILE_DEFINITIONS} ${APR_COMPILE_DEFINITIONS} ${APR_UTIL_COMPILE_DEFINITIONS} )
+    target_include_directories(${PROGRAM_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR} $<TARGET_PROPERTY:log4cxx,INCLUDE_DIRECTORIES>)
+    target_link_libraries(${PROGRAM_NAME} PRIVATE log4cxx ${APR_UTIL_LIBRARIES} ${EXPAT_LIBRARIES} ${APR_LIBRARIES} ${APR_SYSTEM_LIBS})
     if( WIN32 )
-        set_target_properties(${exampleName} PROPERTIES
+        set_target_properties(${PROGRAM_NAME} PROPERTIES
           VS_DEBUGGER_ENVIRONMENT "PATH=${ESCAPED_PATH}"
           VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+          FOLDER Examples
         )
     endif()
 endforeach()
-
-configure_file( custom-appender.xml
-    ${CMAKE_CURRENT_BINARY_DIR}/custom-appender.xml
-    COPYONLY )
 
 # Custom handling for format string example, since it utilizes libfmt
 if(${fmt_FOUND})
@@ -60,6 +69,8 @@ if(${fmt_FOUND})
     if( WIN32 )
         set_target_properties( format-string PROPERTIES
           VS_DEBUGGER_ENVIRONMENT "PATH=${ESCAPED_PATH}"
+          VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+          FOLDER Examples
         )
     endif()
 endif(${fmt_FOUND})

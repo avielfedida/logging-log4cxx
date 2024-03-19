@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
 #include <log4cxx/basicconfigurator.h>
-#include <log4cxx/helpers/object.h>
 #include <log4cxx/appenderskeleton.h>
 #include <log4cxx/helpers/stringhelper.h>
 #include <log4cxx/xml/domconfigurator.h>
 
-namespace log4cxx {
+namespace LOG4CXX_NS {
 
-class NullWriterAppender : public log4cxx::AppenderSkeleton {
+class NullWriterAppender : public AppenderSkeleton {
 public:
 	DECLARE_LOG4CXX_OBJECT(NullWriterAppender)
 	BEGIN_LOG4CXX_CAST_MAP()
@@ -40,11 +38,11 @@ public:
 		return false;
 	}
 
-	void append(const spi::LoggingEventPtr& event, log4cxx::helpers::Pool& p) override {
+	void append(const spi::LoggingEventPtr& event, helpers::Pool& p) override {
 		// This gets called whenever there is a valid event for our appender.
 	}
 
-	void activateOptions(log4cxx::helpers::Pool& /* pool */) override {
+	void activateOptions(helpers::Pool& /* pool */) override {
 		// Given all of our options, do something useful(e.g. open a file)
 	}
 
@@ -60,11 +58,14 @@ IMPLEMENT_LOG4CXX_OBJECT(NullWriterAppender)
 
 }
 
-int main( int argc, char** argv ){
-	log4cxx::xml::DOMConfigurator::configure( "custom-appender.xml" );
+int main( int argc, char** argv )
+{
+    using namespace log4cxx;
 
-	log4cxx::LoggerPtr rootLogger = log4cxx::Logger::getRootLogger();
-	log4cxx::LoggerPtr nullLogger = log4cxx::Logger::getLogger( "NullLogger" );
+	xml::DOMConfigurator::configure( "custom-appender.xml" );
+
+	LoggerPtr rootLogger = Logger::getRootLogger();
+	LoggerPtr nullLogger = Logger::getLogger( "NullLogger" );
 
 	LOG4CXX_INFO( rootLogger, "This is some root message" );
 	LOG4CXX_INFO( nullLogger, "This message will be discarded" );

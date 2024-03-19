@@ -40,18 +40,15 @@
 
 #define LOG4CXX 1
 #include <log4cxx/helpers/aprinitializer.h>
-#include <apr.h>
 
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::config;
+using namespace LOG4CXX_NS::rolling;
 
-using namespace log4cxx;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
-using namespace log4cxx::config;
-using namespace log4cxx::rolling;
-
-#if APR_HAS_THREADS
 #include <log4cxx/helpers/filewatchdog.h>
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 class PropertyWatchdog  : public FileWatchdog
 {
@@ -74,8 +71,6 @@ class PropertyWatchdog  : public FileWatchdog
 }
 
 PropertyWatchdog* PropertyConfigurator::pdog = NULL;
-
-#endif
 
 IMPLEMENT_LOG4CXX_OBJECT(PropertyConfigurator)
 
@@ -135,7 +130,6 @@ spi::ConfigurationStatus PropertyConfigurator::configure(helpers::Properties& pr
 	return PropertyConfigurator().doConfigure(properties, LogManager::getLoggerRepository());
 }
 
-#if APR_HAS_THREADS
 spi::ConfigurationStatus PropertyConfigurator::configureAndWatch(const File& configFilename)
 {
 	return configureAndWatch(configFilename, FileWatchdog::DEFAULT_DELAY);
@@ -161,14 +155,13 @@ spi::ConfigurationStatus PropertyConfigurator::configureAndWatch(
 
 	return stat;
 }
-#endif
 
 spi::ConfigurationStatus PropertyConfigurator::doConfigure(helpers::Properties& properties,
 	spi::LoggerRepositoryPtr hierarchy)
 {
 	hierarchy->setConfigured(true);
 
-	static const LogString DEBUG_KEY(LOG4CXX_STR("log4j.debug"));
+	static const WideLife<LogString> DEBUG_KEY(LOG4CXX_STR("log4j.debug"));
 	LogString value(properties.getProperty(DEBUG_KEY));
 
 	if (!value.empty())
@@ -176,7 +169,7 @@ spi::ConfigurationStatus PropertyConfigurator::doConfigure(helpers::Properties& 
 		LogLog::setInternalDebugging(OptionConverter::toBoolean(value, true));
 	}
 
-	static const LogString THRESHOLD_PREFIX(LOG4CXX_STR("log4j.threshold"));
+	static const WideLife<LogString> THRESHOLD_PREFIX(LOG4CXX_STR("log4j.threshold"));
 	LogString thresholdStr =
 		OptionConverter::findAndSubst(THRESHOLD_PREFIX, properties);
 
@@ -222,7 +215,7 @@ spi::ConfigurationStatus PropertyConfigurator::doConfigure(helpers::Properties& 
 
 void PropertyConfigurator::configureLoggerFactory(helpers::Properties& props)
 {
-	static const LogString LOGGER_FACTORY_KEY(LOG4CXX_STR("log4j.loggerFactory"));
+	static const WideLife<LogString> LOGGER_FACTORY_KEY(LOG4CXX_STR("log4j.loggerFactory"));
 
 	LogString factoryClassName =
 		OptionConverter::findAndSubst(LOGGER_FACTORY_KEY, props);
@@ -236,8 +229,8 @@ void PropertyConfigurator::configureLoggerFactory(helpers::Properties& props)
 		std::shared_ptr<Object> instance = std::shared_ptr<Object>(
 				Loader::loadClass(factoryClassName).newInstance() );
 
-		loggerFactory = log4cxx::cast<LoggerFactory>( instance );
-		static const LogString FACTORY_PREFIX(LOG4CXX_STR("log4j.factory."));
+		loggerFactory = LOG4CXX_NS::cast<LoggerFactory>( instance );
+		static const WideLife<LogString> FACTORY_PREFIX(LOG4CXX_STR("log4j.factory."));
 		Pool p;
 		PropertySetter::setProperties(loggerFactory, props, FACTORY_PREFIX, p);
 	}
@@ -246,8 +239,8 @@ void PropertyConfigurator::configureLoggerFactory(helpers::Properties& props)
 void PropertyConfigurator::configureRootLogger(helpers::Properties& props,
 	spi::LoggerRepositoryPtr& hierarchy)
 {
-	static const LogString ROOT_CATEGORY_PREFIX(LOG4CXX_STR("log4j.rootCategory"));
-	static const LogString ROOT_LOGGER_PREFIX(LOG4CXX_STR("log4j.rootLogger"));
+	static const WideLife<LogString> ROOT_CATEGORY_PREFIX(LOG4CXX_STR("log4j.rootCategory"));
+	static const WideLife<LogString> ROOT_LOGGER_PREFIX(LOG4CXX_STR("log4j.rootLogger"));
 
 
 
@@ -268,7 +261,7 @@ void PropertyConfigurator::configureRootLogger(helpers::Properties& props,
 	{
 		LoggerPtr root = hierarchy->getRootLogger();
 
-		static const LogString INTERNAL_ROOT_NAME(LOG4CXX_STR("root"));
+		static const WideLife<LogString> INTERNAL_ROOT_NAME(LOG4CXX_STR("root"));
 		parseLogger(props, root, effectiveFrefix, INTERNAL_ROOT_NAME, value, true);
 	}
 }
@@ -276,29 +269,22 @@ void PropertyConfigurator::configureRootLogger(helpers::Properties& props,
 void PropertyConfigurator::parseCatsAndRenderers(helpers::Properties& props,
 	spi::LoggerRepositoryPtr& hierarchy)
 {
-	static const LogString CATEGORY_PREFIX(LOG4CXX_STR("log4j.category."));
-	static const LogString LOGGER_PREFIX(LOG4CXX_STR("log4j.logger."));
+	static const WideLife<LogString> CATEGORY_PREFIX(LOG4CXX_STR("log4j.category."));
+	static const WideLife<LogString> LOGGER_PREFIX(LOG4CXX_STR("log4j.logger."));
 
-	std::vector<LogString> names = props.propertyNames();
-
-	std::vector<LogString>::iterator it = names.begin();
-	std::vector<LogString>::iterator itEnd = names.end();
-
-	while (it != itEnd)
+	for (auto key : props.propertyNames())
 	{
-		LogString key = *it++;
-
 		if (key.find(CATEGORY_PREFIX) == 0 || key.find(LOGGER_PREFIX) == 0)
 		{
 			LogString loggerName;
 
 			if (key.find(CATEGORY_PREFIX) == 0)
 			{
-				loggerName = key.substr(CATEGORY_PREFIX.length());
+				loggerName = key.substr(CATEGORY_PREFIX.value().length());
 			}
-			else if (key.find(LOGGER_PREFIX) == 0)
+			else if (key.find(LOGGER_PREFIX.value()) == 0)
 			{
-				loggerName = key.substr(LOGGER_PREFIX.length());
+				loggerName = key.substr(LOGGER_PREFIX.value().length());
 			}
 
 			LogString value = OptionConverter::findAndSubst(key, props);
@@ -315,12 +301,12 @@ bool PropertyConfigurator::parseAdditivityForLogger(helpers::Properties& props,
 	LoggerPtr& cat, const LogString& loggerName)
 {
 
-	static const LogString ADDITIVITY_PREFIX(LOG4CXX_STR("log4j.additivity."));
+	static const WideLife<LogString> ADDITIVITY_PREFIX(LOG4CXX_STR("log4j.additivity."));
 
 
 
-	LogString value(OptionConverter::findAndSubst(ADDITIVITY_PREFIX + loggerName, props));
-	LogLog::debug((LogString) LOG4CXX_STR("Handling ") + ADDITIVITY_PREFIX
+	LogString value(OptionConverter::findAndSubst(ADDITIVITY_PREFIX.value() + loggerName, props));
+	LogLog::debug((LogString) LOG4CXX_STR("Handling ") + ADDITIVITY_PREFIX.value()
 		+ loggerName + LOG4CXX_STR("=[") +  value + LOG4CXX_STR("]"));
 
 	// touch additivity only if necessary
@@ -374,9 +360,9 @@ void PropertyConfigurator::parseLogger(
 		if (StringHelper::equalsIgnoreCase(levelStr, LOG4CXX_STR("INHERITED"), LOG4CXX_STR("inherited"))
 			|| StringHelper::equalsIgnoreCase(levelStr, LOG4CXX_STR("NULL"), LOG4CXX_STR("null")))
 		{
-			static const LogString INTERNAL_ROOT_NAME(LOG4CXX_STR("root"));
+			static const WideLife<LogString> INTERNAL_ROOT_NAME(LOG4CXX_STR("root"));
 
-			if (loggerName == INTERNAL_ROOT_NAME)
+			if (loggerName == INTERNAL_ROOT_NAME.value())
 			{
 				LogLog::warn(LOG4CXX_STR("The root logger cannot be set to null."));
 			}
@@ -437,16 +423,16 @@ AppenderPtr PropertyConfigurator::parseAppender(
 		return appender;
 	}
 
-	static const LogString APPENDER_PREFIX(LOG4CXX_STR("log4j.appender."));
+	static const WideLife<LogString> APPENDER_PREFIX(LOG4CXX_STR("log4j.appender."));
 
 	// Appender was not previously initialized.
-	LogString prefix = APPENDER_PREFIX + appenderName;
+	LogString prefix = APPENDER_PREFIX.value() + appenderName;
 	LogString layoutPrefix = prefix + LOG4CXX_STR(".layout");
 
 	std::shared_ptr<Object> obj =
 		OptionConverter::instantiateByKey(
 			props, prefix, Appender::getStaticClass(), 0);
-	appender = log4cxx::cast<Appender>( obj );
+	appender = LOG4CXX_NS::cast<Appender>( obj );
 
 	// Map obsolete DailyRollingFileAppender property configuration
 	if (!appender &&
@@ -477,7 +463,7 @@ AppenderPtr PropertyConfigurator::parseAppender(
 			std::shared_ptr<Object> obj =
 				OptionConverter::instantiateByKey(
 					props, layoutPrefix, Layout::getStaticClass(), 0);
-			layout = log4cxx::cast<Layout>( obj );
+			layout = LOG4CXX_NS::cast<Layout>( obj );
 
 			if (layout != 0)
 			{
@@ -491,7 +477,7 @@ AppenderPtr PropertyConfigurator::parseAppender(
 			}
 		}
 
-		RollingFileAppenderPtr rolling = log4cxx::cast<rolling::RollingFileAppender>(appender);
+		RollingFileAppenderPtr rolling = LOG4CXX_NS::cast<rolling::RollingFileAppender>(appender);
 		if (rolling)
 		{
 			LogString rollingPolicyKey = prefix + LOG4CXX_STR(".rollingPolicy");
@@ -501,7 +487,7 @@ AppenderPtr PropertyConfigurator::parseAppender(
 				std::shared_ptr<Object> rolling_obj =
 					OptionConverter::instantiateByKey(
 						props, rollingPolicyKey, RollingPolicy::getStaticClass(), 0);
-				rollingPolicy = log4cxx::cast<RollingPolicy>( rolling_obj );
+				rollingPolicy = LOG4CXX_NS::cast<RollingPolicy>( rolling_obj );
 				if(rollingPolicy)
 				{
 					rolling->setRollingPolicy(rollingPolicy);
@@ -519,7 +505,7 @@ AppenderPtr PropertyConfigurator::parseAppender(
 				std::shared_ptr<Object> triggering_obj =
 					OptionConverter::instantiateByKey(
 						props, triggeringPolicyKey, TriggeringPolicy::getStaticClass(), 0);
-				triggeringPolicy = log4cxx::cast<TriggeringPolicy>( triggering_obj );
+				triggeringPolicy = LOG4CXX_NS::cast<TriggeringPolicy>( triggering_obj );
 				if(triggeringPolicy)
 				{
 					rolling->setTriggeringPolicy(triggeringPolicy);

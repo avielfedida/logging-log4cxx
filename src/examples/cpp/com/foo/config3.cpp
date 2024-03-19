@@ -17,6 +17,7 @@
 #include "config.h"
 #include <log4cxx/logmanager.h>
 #include <log4cxx/logstring.h>
+#include <log4cxx/basicconfigurator.h>
 #include <log4cxx/defaultconfigurator.h>
 #include <log4cxx/helpers/pool.h>
 #include <log4cxx/file.h>
@@ -27,8 +28,10 @@
 #include <Windows.h>
 #elif __APPLE__
 #include <mach-o/dyld.h>
+#elif (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 500) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L)
+#include <unistd.h> // getpid
 #else
-#include <unistd.h>     /* getpid */
+#include <cstring> // strncpy
 #endif
 
 
@@ -50,12 +53,14 @@ auto DefaultConfigurationFileNames(std::string& altPrefix) -> std::vector<std::s
 	pathSepar = '\\';
 #elif defined(__APPLE__)
 	_NSGetExecutablePath(buf, &bufCount);
-#else
+#elif (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 500) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L)
 	std::ostringstream exeLink;
 	exeLink << "/proc/" << getpid() << "/exe";
 	bufCount = readlink(exeLink.str().c_str(), buf, bufSize);
 	if (0 < bufCount)
 		buf[bufCount] = 0;
+#else
+	strncpy(buf, "auto-configured", bufSize);
 #endif
 	std::string programFileName(buf);
 	auto slashIndex = programFileName.rfind(pathSepar);
@@ -136,8 +141,10 @@ void SelectConfigurationFile() {
 			}
 		}
 		if (extension[i]) // Found a configuration file?
-			break;
+			return;
 	}
+	// Configuration file not found - send events to the console
+	BasicConfigurator::configure();
 }
 
 } // namespace
@@ -147,17 +154,18 @@ namespace com { namespace foo {
 // Retrieve the \c name logger pointer.
 // Configure Log4cxx on the first call.
 auto getLogger(const std::string& name) -> LoggerPtr {
+	using namespace log4cxx;
 	static struct log4cxx_initializer {
 		log4cxx_initializer() {
 			SelectConfigurationFile();
 		}
 		~log4cxx_initializer() {
-			log4cxx::LogManager::shutdown();
+			LogManager::shutdown();
 		}
 	} initialiser;
 	return name.empty()
-		? log4cxx::LogManager::getRootLogger()
-		: log4cxx::LogManager::getLogger(name);
+		? LogManager::getRootLogger()
+		: LogManager::getLogger(name);
 }
 
 } } // namespace com::foo

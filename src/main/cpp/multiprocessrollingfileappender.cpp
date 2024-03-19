@@ -17,7 +17,6 @@
 
 #include <apr_portable.h>
 #include <apr_file_io.h>
-#include <apr_atomic.h>
 #include <apr_mmap.h>
 #ifndef MAX_FILE_LEN
 	#define MAX_FILE_LEN 2048
@@ -38,10 +37,10 @@
 #include <log4cxx/private/boost-std-configuration.h>
 #include <mutex>
 
-using namespace log4cxx;
-using namespace log4cxx::rolling;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::rolling;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
 
 struct MultiprocessRollingFileAppender::MultiprocessRollingFileAppenderPriv : public FileAppenderPriv
 {
@@ -100,7 +99,7 @@ void MultiprocessRollingFileAppender::activateOptions(Pool& p)
 	//
 	if (_priv->triggeringPolicy == NULL)
 	{
-		TriggeringPolicyPtr trig = log4cxx::cast<TriggeringPolicy>(_priv->rollingPolicy);
+		TriggeringPolicyPtr trig = LOG4CXX_NS::cast<TriggeringPolicy>(_priv->rollingPolicy);
 
 		if (trig != NULL)
 		{
@@ -216,7 +215,7 @@ bool MultiprocessRollingFileAppender::rolloverInternal(Pool& p)
 
 		{
 			LogString fileName(getFile());
-			RollingPolicyBasePtr basePolicy = log4cxx::cast<RollingPolicyBase>(_priv->rollingPolicy);
+			RollingPolicyBasePtr basePolicy = LOG4CXX_NS::cast<RollingPolicyBase>(_priv->rollingPolicy);
 			apr_time_t n = apr_time_now();
 			ObjectPtr obj = std::make_shared<Date>(n);
 			LogString fileNamePattern;
@@ -242,13 +241,17 @@ bool MultiprocessRollingFileAppender::rolloverInternal(Pool& p)
 
 			if (stat == APR_SUCCESS)
 			{
-				snprintf(szUid, MAX_FILE_LEN, "%u", uid);
+#ifdef WIN32
+				snprintf(szUid, MAX_FILE_LEN, "%p", uid);
+#else
+				snprintf(szUid, MAX_FILE_LEN, "%u", (unsigned int)uid);
+#endif
 			}
 
-			log4cxx::filesystem::path path = szDirName;
-			const LogString lockname = path.parent_path() / (path.filename().string() + szUid + ".lock");
+			LOG4CXX_NS::filesystem::path path = szDirName;
+			const auto lockname = path.parent_path() / (path.filename().string() + szUid + ".lock");
 			apr_file_t* lock_file;
-			stat = apr_file_open(&lock_file, lockname.c_str(), APR_CREATE | APR_READ | APR_WRITE, APR_OS_DEFAULT, p.getAPRPool());
+			stat = apr_file_open(&lock_file, lockname.string().c_str(), APR_CREATE | APR_READ | APR_WRITE, APR_OS_DEFAULT, p.getAPRPool());
 
 			if (stat != APR_SUCCESS)
 			{
@@ -283,7 +286,7 @@ bool MultiprocessRollingFileAppender::rolloverInternal(Pool& p)
 				apr_finfo_t finfo1, finfo2;
 				apr_status_t st1, st2;
 				const WriterPtr writer = getWriter();
-				const FileOutputStreamPtr fos = log4cxx::cast<FileOutputStream>( writer );
+				const FileOutputStreamPtr fos = LOG4CXX_NS::cast<FileOutputStream>( writer );
 				if( !fos ){
 					LogLog::error( LOG4CXX_STR("Can't cast writer to FileOutputStream") );
 					return false;
@@ -335,7 +338,7 @@ bool MultiprocessRollingFileAppender::rolloverInternal(Pool& p)
 								{
 									LogLog::warn(LOG4CXX_STR("Exception on rollover"));
 									LogString exmsg;
-									log4cxx::helpers::Transcoder::decode(ex.what(), exmsg);
+									LOG4CXX_NS::helpers::Transcoder::decode(ex.what(), exmsg);
 									_priv->errorHandler->error(exmsg, ex, 0);
 								}
 							}
@@ -396,7 +399,7 @@ bool MultiprocessRollingFileAppender::rolloverInternal(Pool& p)
 								{
 									LogLog::warn(LOG4CXX_STR("Exception during rollover"));
 									LogString exmsg;
-									log4cxx::helpers::Transcoder::decode(ex.what(), exmsg);
+									LOG4CXX_NS::helpers::Transcoder::decode(ex.what(), exmsg);
 									_priv->errorHandler->error(exmsg, ex, 0);
 								}
 							}
@@ -434,7 +437,7 @@ bool MultiprocessRollingFileAppender::rolloverInternal(Pool& p)
 				{
 					LogLog::warn(LOG4CXX_STR("Exception during rollover"));
 					LogString exmsg;
-					log4cxx::helpers::Transcoder::decode(ex.what(), exmsg);
+					LOG4CXX_NS::helpers::Transcoder::decode(ex.what(), exmsg);
 					_priv->errorHandler->error(exmsg, ex, 0);
 				}
 
@@ -491,7 +494,7 @@ void MultiprocessRollingFileAppender::subAppend(const LoggingEventPtr& event, Po
 		{
 			LogLog::warn(LOG4CXX_STR("Exception during rollover attempt."));
 			LogString exmsg;
-			log4cxx::helpers::Transcoder::decode(ex.what(), exmsg);
+			LOG4CXX_NS::helpers::Transcoder::decode(ex.what(), exmsg);
 			_priv->errorHandler->error(exmsg);
 		}
 	}
@@ -501,7 +504,7 @@ void MultiprocessRollingFileAppender::subAppend(const LoggingEventPtr& event, Po
 	apr_finfo_t finfo1, finfo2;
 	apr_status_t st1, st2;
 	const WriterPtr writer = getWriter();
-	const FileOutputStreamPtr fos = log4cxx::cast<FileOutputStream>( writer );
+	const FileOutputStreamPtr fos = LOG4CXX_NS::cast<FileOutputStream>( writer );
 	if( !fos ){
 		LogLog::error( LOG4CXX_STR("Can't cast writer to FileOutputStream") );
 		return;
@@ -559,7 +562,7 @@ void MultiprocessRollingFileAppender::setRollingPolicy(const RollingPolicyPtr& p
 {
 	_priv->rollingPolicy = policy;
 
-	TimeBasedRollingPolicyPtr timeBased = log4cxx::cast<TimeBasedRollingPolicy>(policy);
+	TimeBasedRollingPolicyPtr timeBased = LOG4CXX_NS::cast<TimeBasedRollingPolicy>(policy);
 	if( timeBased ){
 		timeBased->setMultiprocess(true);
 	}
@@ -582,7 +585,7 @@ void MultiprocessRollingFileAppender::close()
 	FileAppender::close();
 }
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace rolling
 {

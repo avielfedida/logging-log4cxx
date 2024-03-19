@@ -21,10 +21,10 @@
 #include <log4cxx/spi/location/locationinfo.h>
 #include <log4cxx/private/patternconverter_priv.h>
 
-using namespace log4cxx;
-using namespace log4cxx::pattern;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::pattern;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 #define priv static_cast<LiteralPatternConverterPrivate*>(m_priv.get())
 
@@ -53,7 +53,7 @@ PatternConverterPtr LiteralPatternConverter::newInstance(
 {
 	if (literal.length() == 1 && literal[0] == 0x20 /* ' ' */)
 	{
-		static PatternConverterPtr blank = std::make_shared<LiteralPatternConverter>(literal);
+		static WideLife<PatternConverterPtr> blank = std::make_shared<LiteralPatternConverter>(literal);
 		return blank;
 	}
 

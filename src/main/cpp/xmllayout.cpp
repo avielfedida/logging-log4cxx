@@ -27,18 +27,25 @@
 #include <log4cxx/ndc.h>
 
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
-using namespace log4cxx::xml;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::xml;
 
 struct XMLLayout::XMLLayoutPrivate
 {
-	XMLLayoutPrivate() : locationInfo(false), properties(false) {}
+	XMLLayoutPrivate()
+		: locationInfo(false)
+		, properties(false)
+		, expectedPatternLength(100)
+		{}
 
 	// Print no location info by default
 	bool locationInfo; //= false
 	bool properties; // = false
+
+	// Expected length of a formatted event excluding the message text
+	size_t expectedPatternLength;
 };
 
 IMPLEMENT_LOG4CXX_OBJECT(XMLLayout)
@@ -46,6 +53,7 @@ IMPLEMENT_LOG4CXX_OBJECT(XMLLayout)
 XMLLayout::XMLLayout()
 	: m_priv(std::make_unique<XMLLayoutPrivate>())
 {
+	m_priv->expectedPatternLength = getFormattedEventCharacterCount() * 2;
 }
 
 XMLLayout::~XMLLayout() {}
@@ -56,11 +64,13 @@ void XMLLayout::setOption(const LogString& option,
 	if (StringHelper::equalsIgnoreCase(option, LOG4CXX_STR("LOCATIONINFO"), LOG4CXX_STR("locationinfo")))
 	{
 		setLocationInfo(OptionConverter::toBoolean(value, false));
+		m_priv->expectedPatternLength = getFormattedEventCharacterCount() * 2;
 	}
 
 	if (StringHelper::equalsIgnoreCase(option, LOG4CXX_STR("PROPERTIES"), LOG4CXX_STR("properties")))
 	{
 		setProperties(OptionConverter::toBoolean(value, false));
+		m_priv->expectedPatternLength = getFormattedEventCharacterCount() * 2;
 	}
 }
 
@@ -68,6 +78,7 @@ void XMLLayout::format(LogString& output,
 	const spi::LoggingEventPtr& event,
 	Pool& p) const
 {
+	output.reserve(m_priv->expectedPatternLength + event->getMessage().size());
 	output.append(LOG4CXX_STR("<log4j:event logger=\""));
 	Transform::appendEscapingTags(output, event->getLoggerName());
 	output.append(LOG4CXX_STR("\" timestamp=\""));
@@ -124,11 +135,8 @@ void XMLLayout::format(LogString& output,
 			output.append(LOG4CXX_STR("<log4j:properties>"));
 			output.append(LOG4CXX_EOL);
 
-			for (LoggingEvent::KeySet::const_iterator i = keySet.begin();
-				i != keySet.end();
-				i++)
+			for (auto key : keySet)
 			{
-				LogString key(*i);
 				LogString value;
 
 				if (event->getMDC(key, value))
@@ -142,11 +150,8 @@ void XMLLayout::format(LogString& output,
 				}
 			}
 
-			for (LoggingEvent::KeySet::const_iterator i2 = propertySet.begin();
-				i2 != propertySet.end();
-				i2++)
+			for (auto key : propertySet)
 			{
-				LogString key(*i2);
 				LogString value;
 
 				if (event->getProperty(key, value))

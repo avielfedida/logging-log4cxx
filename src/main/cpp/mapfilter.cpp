@@ -22,10 +22,10 @@
 #include <log4cxx/helpers/optionconverter.h>
 #include <log4cxx/private/filter_priv.h>
 
-using namespace log4cxx;
-using namespace log4cxx::filter;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::filter;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 #define priv static_cast<MapFilterPrivate*>(m_priv.get())
 
@@ -66,7 +66,7 @@ void MapFilter::setOption(  const LogString& option,
 }
 
 Filter::FilterDecision MapFilter::decide(
-	const log4cxx::spi::LoggingEventPtr& event) const
+	const LOG4CXX_NS::spi::LoggingEventPtr& event) const
 {
 	if (priv->keyVals.empty())
 	{
@@ -75,12 +75,12 @@ Filter::FilterDecision MapFilter::decide(
 
 	bool matched = true;
 
-	for (KeyVals::const_iterator it = priv->keyVals.begin(); it != priv->keyVals.end(); ++it)
+	for (auto const& item : priv->keyVals)
 	{
 		LogString curval;
-		event->getMDC(it->first, curval);
+		event->getMDC(item.first, curval);
 
-		if (curval.empty() || curval != it->second)
+		if (curval.empty() || curval != item.second)
 		{
 			matched = false;
 		}
@@ -112,10 +112,10 @@ void MapFilter::setKeyValue(const LogString& strKey, const LogString& strValue)
 
 const LogString& MapFilter::getValue(const LogString& strKey) const
 {
-	static  const LogString                 empty;
+	static const WideLife<LogString> empty;
 	const KeyVals::const_iterator   it(priv->keyVals.find(strKey));
 
-	return (it != priv->keyVals.end() ? it->second : empty);
+	return (it != priv->keyVals.end() ? it->second : empty.value());
 }
 
 void MapFilter::setAcceptOnMatch(bool acceptOnMatch1)

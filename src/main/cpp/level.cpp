@@ -25,57 +25,57 @@
 #include <log4cxx/helpers/aprinitializer.h>
 #include <mutex>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT_WITH_CUSTOM_CLASS(Level, LevelClass)
 
 LevelPtr Level::getOff()
 {
-	static LevelPtr offLevel = std::make_shared<Level>(Level::OFF_INT, LOG4CXX_STR("OFF"), 0);
+	static WideLife<LevelPtr> offLevel = std::make_shared<Level>(Level::OFF_INT, LOG4CXX_STR("OFF"), 0);
 	return offLevel;
 }
 
 LevelPtr Level::getFatal()
 {
-	static LevelPtr fatalLevel = std::make_shared<Level>(Level::FATAL_INT, LOG4CXX_STR("FATAL"), 0);
+	static WideLife<LevelPtr> fatalLevel = std::make_shared<Level>(Level::FATAL_INT, LOG4CXX_STR("FATAL"), 0);
 	return fatalLevel;
 }
 
 LevelPtr Level::getError()
 {
-	static LevelPtr errorLevel = std::make_shared<Level>(Level::ERROR_INT, LOG4CXX_STR("ERROR"), 3);
+	static WideLife<LevelPtr> errorLevel = std::make_shared<Level>(Level::ERROR_INT, LOG4CXX_STR("ERROR"), 3);
 	return errorLevel;
 }
 
 LevelPtr Level::getWarn()
 {
-	static LevelPtr warnLevel = std::make_shared<Level>(Level::WARN_INT, LOG4CXX_STR("WARN"), 4);
+	static WideLife<LevelPtr> warnLevel = std::make_shared<Level>(Level::WARN_INT, LOG4CXX_STR("WARN"), 4);
 	return warnLevel;
 }
 
 LevelPtr Level::getInfo()
 {
-	static LevelPtr infoLevel = std::make_shared<Level>(Level::INFO_INT, LOG4CXX_STR("INFO"), 6);
+	static WideLife<LevelPtr> infoLevel = std::make_shared<Level>(Level::INFO_INT, LOG4CXX_STR("INFO"), 6);
 	return infoLevel;
 }
 
 LevelPtr Level::getDebug()
 {
-	static LevelPtr debugLevel = std::make_shared<Level>(Level::DEBUG_INT, LOG4CXX_STR("DEBUG"), 7);
+	static WideLife<LevelPtr> debugLevel = std::make_shared<Level>(Level::DEBUG_INT, LOG4CXX_STR("DEBUG"), 7);
 	return debugLevel;
 }
 
 LevelPtr Level::getTrace()
 {
-	static LevelPtr traceLevel = std::make_shared<Level>(Level::TRACE_INT, LOG4CXX_STR("TRACE"), 7);
+	static WideLife<LevelPtr> traceLevel = std::make_shared<Level>(Level::TRACE_INT, LOG4CXX_STR("TRACE"), 7);
 	return traceLevel;
 }
 
 
 LevelPtr Level::getAll()
 {
-	static LevelPtr allLevel = std::make_shared<Level>(Level::ALL_INT, LOG4CXX_STR("ALL"), 7);
+	static WideLife<LevelPtr> allLevel = std::make_shared<Level>(Level::ALL_INT, LOG4CXX_STR("ALL"), 7);
 	return allLevel;
 }
 
@@ -104,6 +104,22 @@ LevelPtr Level::toLevel(int val)
 {
 	return toLevel(val, Level::getDebug());
 }
+
+const Level::Data& Level::getData()
+{
+	static Data data =
+		{ getOff()
+		, getFatal()
+		, getError()
+		, getWarn()
+		, getInfo()
+		, getDebug()
+		, getTrace()
+		, getAll()
+		};
+	return data;
+}
+
 
 LevelPtr Level::toLevel(int val, const LevelPtr& defaultLevel)
 {
@@ -173,7 +189,7 @@ void Level::toString(std::wstring& dst) const
 
 #endif
 
-#if LOG4CXX_UNICHAR_API
+#if LOG4CXX_UNICHAR_API || LOG4CXX_LOGCHAR_IS_UNICHAR
 LevelPtr Level::toLevel(const std::basic_string<UniChar>& sArg)
 {
 	return toLevel(sArg, Level::getDebug());

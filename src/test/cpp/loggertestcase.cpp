@@ -23,6 +23,7 @@
 #include <log4cxx/logmanager.h>
 #include <log4cxx/level.h>
 #include <log4cxx/hierarchy.h>
+#include <log4cxx/loggerinstance.h>
 #include <log4cxx/spi/rootlogger.h>
 #include <log4cxx/helpers/propertyresourcebundle.h>
 #include "insertwide.h"
@@ -60,6 +61,31 @@ class CountingAppender : public AppenderSkeleton
 		}
 };
 
+class CountingListener : public HierarchyEventListener{
+public:
+	DECLARE_LOG4CXX_OBJECT(CountingListener)
+	BEGIN_LOG4CXX_CAST_MAP()
+	LOG4CXX_CAST_ENTRY(CountingListener)
+	END_LOG4CXX_CAST_MAP()
+
+	int numRemoved = 0;
+	int numAdded = 0;
+
+	void addAppenderEvent(
+		const Logger* logger,
+			const Appender* appender){
+		numAdded++;
+	}
+
+	void removeAppenderEvent(
+		const Logger* logger,
+			const Appender* appender){
+		numRemoved++;
+	}
+};
+
+IMPLEMENT_LOG4CXX_OBJECT(CountingListener);
+
 LOGUNIT_CLASS(LoggerTestCase)
 {
 	LOGUNIT_TEST_SUITE(LoggerTestCase);
@@ -74,8 +100,12 @@ LOGUNIT_CLASS(LoggerTestCase)
 	//    LOGUNIT_TEST(testRB3);
 	LOGUNIT_TEST(testExists);
 	LOGUNIT_TEST(testHierarchy1);
+	LOGUNIT_TEST(testLoggerInstance);
 	LOGUNIT_TEST(testTrace);
 	LOGUNIT_TEST(testIsTraceEnabled);
+	LOGUNIT_TEST(testAddingListeners);
+	LOGUNIT_TEST(testAddingAndRemovingListeners);
+	LOGUNIT_TEST(testAddingAndRemovingListeners2);
 	LOGUNIT_TEST_SUITE_END();
 
 public:
@@ -421,6 +451,48 @@ public:
 		LOGUNIT_ASSERT_EQUAL(true, Logger::isTraceEnabledFor(abc));
 	}
 
+	void testLoggerInstance()
+	{
+		LoggerInstancePtr initiallyNull;
+		auto ca = std::make_shared<CountingAppender>();
+		Logger::getRootLogger()->addAppender(ca);
+
+		// Check instance loggers are removed from the LoggerRepository
+		std::vector<LogString> instanceNames =
+		{ LOG4CXX_STR("xxx.zzz")
+		, LOG4CXX_STR("xxx.aaaa")
+		, LOG4CXX_STR("xxx.bbb")
+		, LOG4CXX_STR("xxx.ccc")
+		, LOG4CXX_STR("xxx.ddd")
+		};
+		auto initialCount = LogManager::getCurrentLoggers().size();
+		int expectedCount = 0;
+		for (auto loggerName : instanceNames)
+		{
+			LoggerInstancePtr instanceLogger(loggerName);
+			instanceLogger->info("Hello, World.");
+			++expectedCount;
+		}
+		auto finalCount = LogManager::getCurrentLoggers().size();
+		LOGUNIT_ASSERT_EQUAL(initialCount, finalCount);
+		LOGUNIT_ASSERT_EQUAL(ca->counter, expectedCount);
+
+		// Check the logger is not removed when referenced elsewhere
+		auto a = Logger::getLogger(LOG4CXX_TEST_STR("xxx.aaaa"));
+		{
+			LoggerInstancePtr instanceLogger(LOG4CXX_TEST_STR("xxx.aaaa"));
+			instanceLogger->info("Hello, World.");
+			++expectedCount;
+		}
+		LOGUNIT_ASSERT(LogManager::exists(LOG4CXX_TEST_STR("xxx.aaaa")));
+		LOGUNIT_ASSERT_EQUAL(ca->counter, expectedCount);
+
+		// Check reset
+		initiallyNull.reset("InitiallyNullLoggerPtr");
+		LOGUNIT_ASSERT(initiallyNull);
+		LOG4CXX_INFO(initiallyNull, "Hello, World.");
+	}
+
 	void compileTestForLOGCXX202() const
 	{
 		//
@@ -486,6 +558,64 @@ public:
 		LOGUNIT_ASSERT_EQUAL(true, Logger::isInfoEnabledFor(root));
 		LOGUNIT_ASSERT_EQUAL(true, Logger::isWarnEnabledFor(root));
 		LOGUNIT_ASSERT_EQUAL(true, Logger::isErrorEnabledFor(root));
+	}
+
+	void testAddingListeners()
+	{
+		auto appender = std::shared_ptr<CountingAppender>(new CountingAppender);
+		LoggerPtr root = Logger::getRootLogger();
+		std::shared_ptr<CountingListener> listener = std::shared_ptr<CountingListener>(new CountingListener());
+
+		root->getLoggerRepository()->addHierarchyEventListener(listener);
+
+		root->addAppender(appender);
+
+		LOGUNIT_ASSERT_EQUAL(1, listener->numAdded);
+		LOGUNIT_ASSERT_EQUAL(0, listener->numRemoved);
+	}
+
+	void testAddingAndRemovingListeners()
+	{
+		auto appender = std::shared_ptr<CountingAppender>(new CountingAppender);
+		LoggerPtr root = Logger::getRootLogger();
+		std::shared_ptr<CountingListener> listener = std::shared_ptr<CountingListener>(new CountingListener());
+
+		root->getLoggerRepository()->addHierarchyEventListener(listener);
+
+		root->addAppender(appender);
+
+		LOGUNIT_ASSERT_EQUAL(1, listener->numAdded);
+		LOGUNIT_ASSERT_EQUAL(0, listener->numRemoved);
+
+		root->removeAppender(appender);
+
+		LOGUNIT_ASSERT_EQUAL(1, listener->numAdded);
+		LOGUNIT_ASSERT_EQUAL(1, listener->numRemoved);
+	}
+
+	void testAddingAndRemovingListeners2()
+	{
+		auto appender = std::shared_ptr<CountingAppender>(new CountingAppender);
+		auto appender2 = std::shared_ptr<CountingAppender>(new CountingAppender);
+		LoggerPtr root = Logger::getRootLogger();
+		std::shared_ptr<CountingListener> listener = std::shared_ptr<CountingListener>(new CountingListener());
+
+		root->getLoggerRepository()->addHierarchyEventListener(listener);
+
+		root->addAppender(appender);
+
+		LOGUNIT_ASSERT_EQUAL(1, listener->numAdded);
+		LOGUNIT_ASSERT_EQUAL(0, listener->numRemoved);
+
+		root->addAppender(appender2);
+
+		LOGUNIT_ASSERT_EQUAL(2, listener->numAdded);
+		LOGUNIT_ASSERT_EQUAL(0, listener->numRemoved);
+
+		root->removeAllAppenders();
+
+		LOGUNIT_ASSERT_EQUAL(2, listener->numAdded);
+		LOGUNIT_ASSERT_EQUAL(2, listener->numRemoved);
 	}
 
 protected:

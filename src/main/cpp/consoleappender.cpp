@@ -24,8 +24,8 @@
 #include <log4cxx/private/appenderskeleton_priv.h>
 #include <log4cxx/private/writerappender_priv.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
 
 struct ConsoleAppender::ConsoleAppenderPriv : public WriterAppender::WriterAppenderPriv
 {
@@ -70,13 +70,13 @@ ConsoleAppender::~ConsoleAppender()
 
 const LogString& ConsoleAppender::getSystemOut()
 {
-	static const LogString name(LOG4CXX_STR("System.out"));
+	static const WideLife<LogString> name(LOG4CXX_STR("System.out"));
 	return name;
 }
 
 const LogString& ConsoleAppender::getSystemErr()
 {
-	static const LogString name(LOG4CXX_STR("System.err"));
+	static const WideLife<LogString> name(LOG4CXX_STR("System.err"));
 	return name;
 }
 

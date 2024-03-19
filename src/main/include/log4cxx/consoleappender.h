@@ -20,13 +20,19 @@
 
 #include <log4cxx/writerappender.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 /**
 * ConsoleAppender appends log events to <code>stdout</code> or
-* <code>stderr</code> using a layout specified by the user. The
-* default target is <code>stdout</code>.
+* <code>stderr</code> using a layout specified by the user.
+*
+* The default target is <code>stdout</code>.
+*
+* You can use <a href="https://en.cppreference.com/w/c/io/fwide">fwide(stdout, 1)</a> in your configuration code
+* or use the cmake directive `LOG4CXX_FORCE_WIDE_CONSOLE=ON` when building Log4cxx
+* to force Log4cxx to use <a href="https://en.cppreference.com/w/c/io/fputws">fputws</a>.
+* If doing this ensure the cmake directive `LOG4CXX_WCHAR_T` is also enabled.
 */
 class LOG4CXX_EXPORT ConsoleAppender : public WriterAppender
 {
@@ -76,7 +82,21 @@ class LOG4CXX_EXPORT ConsoleAppender : public WriterAppender
 		*/
 		LogString getTarget() const;
 
+		/**
+		\copybrief WriterAppender::activateOptions()
+
+		No action is performed in this implementation.
+		*/
 		void activateOptions(helpers::Pool& p) override;
+		/**
+		\copybrief WriterAppender::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		Target | System.err,System.out | System.out
+
+		\sa WriterAppender::setOption()
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**

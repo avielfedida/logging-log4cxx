@@ -21,31 +21,55 @@
 
 #include "appenderskeleton_priv.h"
 
+#if LOG4CXX_EVENTS_AT_EXIT
+#include "atexitregistry.h"
+#endif
+
 #ifndef _LOG4CXX_WRITERAPPENDER_PRIV_H
 #define _LOG4CXX_WRITERAPPENDER_PRIV_H
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 struct WriterAppender::WriterAppenderPriv : public AppenderSkeleton::AppenderSkeletonPrivate
 {
 	WriterAppenderPriv() :
 		AppenderSkeletonPrivate(),
-		immediateFlush(true) {}
+		immediateFlush(true)
+#if LOG4CXX_EVENTS_AT_EXIT
+		, atExitRegistryRaii([this]{atExitActivated();})
+#endif
+	{
+	}
 
 	WriterAppenderPriv(const LayoutPtr& layout1,
-		log4cxx::helpers::WriterPtr& writer1) :
+		LOG4CXX_NS::helpers::WriterPtr& writer1) :
 		AppenderSkeletonPrivate(layout1),
 		immediateFlush(true),
 		writer(writer1)
+#if LOG4CXX_EVENTS_AT_EXIT
+		, atExitRegistryRaii([this]{atExitActivated();})
+#endif
 	{
 	}
 
 	WriterAppenderPriv(const LayoutPtr& layout1) :
 		AppenderSkeletonPrivate(layout1),
 		immediateFlush(true)
+#if LOG4CXX_EVENTS_AT_EXIT
+		, atExitRegistryRaii([this]{atExitActivated();})
+#endif
 	{
 	}
+
+#if LOG4CXX_EVENTS_AT_EXIT
+	void atExitActivated()
+	{
+		std::lock_guard<std::recursive_mutex> lock(mutex);
+		if (writer)
+			writer->flush(pool);
+	}
+#endif
 
 	/**
 	Immediate flush means that the underlying writer or output stream
@@ -72,7 +96,11 @@ struct WriterAppender::WriterAppenderPriv : public AppenderSkeleton::AppenderSke
 	/**
 	*  This is the {@link Writer Writer} where we will write to.
 	*/
-	log4cxx::helpers::WriterPtr writer;
+	LOG4CXX_NS::helpers::WriterPtr writer;
+
+#if LOG4CXX_EVENTS_AT_EXIT
+	helpers::AtExitRegistry::Raii atExitRegistryRaii;
+#endif
 };
 
 }

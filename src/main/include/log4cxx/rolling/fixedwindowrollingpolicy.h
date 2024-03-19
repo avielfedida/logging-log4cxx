@@ -23,7 +23,7 @@
 
 
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 namespace helpers
@@ -83,14 +83,33 @@ class LOG4CXX_EXPORT FixedWindowRollingPolicy : public RollingPolicyBase
 		 */
 		enum { MAX_WINDOW_SIZE = 12 };
 
-		bool purge(int purgeStart, int maxIndex, log4cxx::helpers::Pool& p) const;
+		bool purge(int purgeStart, int maxIndex, LOG4CXX_NS::helpers::Pool& p) const;
 
 	public:
 
 		FixedWindowRollingPolicy();
 		~FixedWindowRollingPolicy();
 
+		/**
+		\copybrief RollingPolicyBase::activateOptions()
+
+		Logs a warning if an option is not valid.
+
+		\sa RollingPolicyBase::activateOptions()
+		*/
 		void activateOptions(helpers::Pool& p) override;
+
+		/**
+		\copybrief RollingPolicyBase::setOption()
+
+		Supported options | Supported values | Default value
+		:-------------- | :----------------: | :---------------:
+		MinIndex | 1-12 | 1
+		MaxIndex | 1-12 | 7
+		ThrowIOExceptionOnForkFailure | True,False | True
+
+		\sa RollingPolicyBase::setOption()
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 		void rollover();
@@ -119,7 +138,12 @@ class LOG4CXX_EXPORT FixedWindowRollingPolicy : public RollingPolicyBase
 			helpers::Pool& pool) override;
 
 	protected:
-		log4cxx::pattern::PatternMap getFormatSpecifiers() const override;
+		/**
+		 * A map from "i" and "index" to a integer conversion formatter.
+		 *
+		 * \sa IntegerPatternConverter
+		 */
+		LOG4CXX_NS::pattern::PatternMap getFormatSpecifiers() const override;
 
 };
 

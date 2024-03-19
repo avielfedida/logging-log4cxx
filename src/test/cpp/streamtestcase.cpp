@@ -17,7 +17,7 @@
 
 #include <log4cxx/log4cxx.h>
  /* Prevent error C2491: 'std::numpunct<_Elem>::id': definition of dllimport static data member not allowed */
-#if defined(_MSC_VER) && (LOG4CXX_UNICHAR_API || LOG4CXX_CFSTRING_API)
+#if defined(_MSC_VER) && LOG4CXX_UNICHAR_API
 #define __FORCE_INSTANCE
 #endif
 #include <ostream>
@@ -30,6 +30,7 @@
 #include "insertwide.h"
 #include "logunit.h"
 #include <log4cxx/stream.h>
+#include <log4cxx/helpers/loglog.h>
 
 #if LOG4CXX_CFSTRING_API
 	#include <CoreFoundation/CFString.h>
@@ -121,12 +122,23 @@ LOGUNIT_CLASS(StreamTestCase)
 #if LOG4CXX_CFSTRING_API
 	LOGUNIT_TEST(testCFString);
 	LOGUNIT_TEST(testCFStringAppend);
+#endif
+#if LOG4CXX_UNICHAR_API && LOG4CXX_CFSTRING_API
 	LOGUNIT_TEST(testULogStreamCFString);
 	LOGUNIT_TEST(testULogStreamCFString2);
 #endif
 	LOGUNIT_TEST_SUITE_END();
 
 	VectorAppenderPtr vectorAppender;
+
+#ifdef _DEBUG
+	struct Fixture
+	{
+		Fixture() {
+			helpers::LogLog::setInternalDebugging(true);
+		}
+	} suiteFixture;
+#endif
 
 public:
 	void setUp()
@@ -176,8 +188,9 @@ public:
 	{
 		LoggerPtr root(Logger::getRootLogger());
 		LOG4CXX_INFO(root, std::scientific << 0.000001115);
-		spi::LoggingEventPtr event(vectorAppender->getVector()[0]);
-		LogString msg(event->getMessage());
+		auto events = vectorAppender->getVector();
+		LOGUNIT_ASSERT_EQUAL((size_t) 1, events.size());
+		LogString msg(events.front()->getMessage());
 		LOGUNIT_ASSERT(msg.find(LOG4CXX_STR("e-")) != LogString::npos ||
 			msg.find(LOG4CXX_STR("E-")) != LogString::npos);
 	}
@@ -623,17 +636,19 @@ public:
 	void testCFString()
 	{
 		LoggerPtr root(Logger::getRootLogger());
-		LOG4CXX_INFO(root, CFSTR("This is a test"))
+		LOG4CXX_INFO(root, CFSTR("This is a test"));
 		LOGUNIT_ASSERT_EQUAL((size_t) 1, vectorAppender->getVector().size());
 	}
 
 	void testCFStringAppend()
 	{
 		LoggerPtr root(Logger::getRootLogger());
-		LOG4CXX_INFO(root, CFSTR("This is a test") << CFSTR(": Details to follow"))
+		LOG4CXX_INFO(root, CFSTR("This is a test") << CFSTR(": Details to follow"));
 		LOGUNIT_ASSERT_EQUAL((size_t) 1, vectorAppender->getVector().size());
 	}
+#endif
 
+#if LOG4CXX_UNICHAR_API && LOG4CXX_CFSTRING_API
 	void testULogStreamCFString()
 	{
 		ulogstream root(Logger::getRootLogger(), Level::getInfo());

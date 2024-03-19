@@ -38,9 +38,9 @@
 #include <log4cxx/private/log4cxx_private.h>
 #include <log4cxx/helpers/date.h>
 
-using namespace log4cxx;
-using namespace log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 struct LoggingEvent::LoggingEventPrivate
 {
@@ -54,6 +54,28 @@ struct LoggingEvent::LoggingEventPrivate
 		locationInfo(),
 		threadName(getCurrentThreadName()),
 		threadUserName(getCurrentThreadUserName())
+	{
+	}
+
+	LoggingEventPrivate
+		( const LogString& logger1
+		, const LevelPtr& level1
+		, const LocationInfo& locationInfo1
+		, LogString&& message1
+		) :
+		logger(logger1),
+		level(level1),
+		ndc(0),
+		mdcCopy(0),
+		properties(0),
+		ndcLookupRequired(true),
+		mdcCopyLookupRequired(true),
+		message(std::move(message1)),
+		timeStamp(Date::currentTime()),
+		locationInfo(locationInfo1),
+		threadName(getCurrentThreadName()),
+		threadUserName(getCurrentThreadUserName()),
+		chronoTimeStamp(std::chrono::microseconds(timeStamp))
 	{
 	}
 
@@ -125,7 +147,7 @@ struct LoggingEvent::LoggingEventPrivate
 	log4cxx_time_t timeStamp;
 
 	/** The is the location where this log statement was written. */
-	const log4cxx::spi::LocationInfo locationInfo;
+	const LOG4CXX_NS::spi::LocationInfo locationInfo;
 
 
 	/** The identifier of thread in which this logging event
@@ -151,11 +173,21 @@ IMPLEMENT_LOG4CXX_OBJECT(LoggingEvent)
 //
 log4cxx_time_t LoggingEvent::getStartTime()
 {
-	return log4cxx::helpers::APRInitializer::initialize();
+	return LOG4CXX_NS::helpers::APRInitializer::initialize();
 }
 
 LoggingEvent::LoggingEvent() :
 	m_priv(std::make_unique<LoggingEventPrivate>())
+{
+}
+
+LoggingEvent::LoggingEvent
+	( const LogString&    logger
+	, const LevelPtr&     level
+	, const LocationInfo& location
+	, LogString&&         message
+	)
+	: m_priv(std::make_unique<LoggingEventPrivate>(logger, level, location, std::move(message)))
 {
 }
 
@@ -222,13 +254,11 @@ LoggingEvent::KeySet LoggingEvent::getMDCKeySet() const
 {
 	LoggingEvent::KeySet set;
 
-	if (m_priv->mdcCopy != 0 && !m_priv->mdcCopy->empty())
+	if (m_priv->mdcCopy && !m_priv->mdcCopy->empty())
 	{
-		MDC::Map::const_iterator it;
-
-		for (it = m_priv->mdcCopy->begin(); it != m_priv->mdcCopy->end(); it++)
+		for (auto const& item : *m_priv->mdcCopy)
 		{
-			set.push_back(it->first);
+			set.push_back(item.first);
 
 		}
 	}
@@ -236,13 +266,11 @@ LoggingEvent::KeySet LoggingEvent::getMDCKeySet() const
 	{
 		ThreadSpecificData* data = ThreadSpecificData::getCurrentData();
 
-		if (data != 0)
+		if (data)
 		{
-			MDC::Map& m = data->getMap();
-
-			for (MDC::Map::const_iterator it = m.begin(); it != m.end(); it++)
+			for (auto const& item : data->getMap())
 			{
-				set.push_back(it->first);
+				set.push_back(item.first);
 			}
 		}
 	}
@@ -291,13 +319,11 @@ LoggingEvent::KeySet LoggingEvent::getPropertyKeySet() const
 {
 	LoggingEvent::KeySet set;
 
-	if (m_priv->properties != 0)
+	if (m_priv->properties)
 	{
-		std::map<LogString, LogString>::const_iterator it;
-
-		for (it = m_priv->properties->begin(); it != m_priv->properties->end(); it++)
+		for (auto item : *m_priv->properties)
 		{
-			set.push_back(it->first);
+			set.push_back(item.first);
 		}
 	}
 
@@ -310,9 +336,9 @@ const LogString& LoggingEvent::getCurrentThreadName()
 #if defined(_WIN32)
 	using ThreadIdType = DWORD;
 	ThreadIdType threadId = GetCurrentThreadId();
-#elif APR_HAS_THREADS
-	using ThreadIdType = apr_os_thread_t;
-	ThreadIdType threadId = apr_os_thread_current();
+#elif LOG4CXX_HAS_PTHREAD_SELF
+	using ThreadIdType = pthread_t;
+	ThreadIdType threadId = pthread_self();
 #else
 	using ThreadIdType = int;
 	ThreadIdType threadId = 0;
@@ -336,22 +362,19 @@ const LogString& LoggingEvent::getCurrentThreadName()
 		return thread_id_string;
 	}
 
-#if APR_HAS_THREADS
 #if defined(_WIN32)
 	char result[20];
 	apr_snprintf(result, sizeof(result), LOG4CXX_WIN32_THREAD_FMTSPEC, threadId);
-#else
-	// apr_os_thread_t encoded in HEX takes needs as many characters
+	thread_id_string = Transcoder::decode(result);
+#elif LOG4CXX_HAS_PTHREAD_SELF
+	// pthread_t encoded in HEX takes needs as many characters
 	// as two times the size of the type, plus an additional null byte.
-	char result[sizeof(apr_os_thread_t) * 3 + 10];
+	char result[sizeof(pthread_t) * 3 + 10];
 	apr_snprintf(result, sizeof(result), LOG4CXX_APR_THREAD_FMTSPEC, (void*) &threadId);
-#endif /* _WIN32 */
-
-	log4cxx::helpers::Transcoder::decode(reinterpret_cast<const char*>(result), thread_id_string);
-
+	thread_id_string = Transcoder::decode(result);
 #else
-    thread_id_string = LOG4CXX_STR("0x00000000");
-#endif /* APR_HAS_THREADS */
+	thread_id_string = LOG4CXX_STR("0x00000000");
+#endif
 	return thread_id_string;
 }
 
@@ -360,7 +383,7 @@ const LogString& LoggingEvent::getCurrentThreadUserName()
 #if LOG4CXX_HAS_THREAD_LOCAL
 	thread_local LogString thread_name;
 #else
-	static LogString thread_name = LOG4CXX_STR("(noname)");
+	static WideLife<LogString> thread_name = LOG4CXX_STR("(noname)");
 #endif
 	if( !thread_name.empty() ){
 		return thread_name;
@@ -369,11 +392,10 @@ const LogString& LoggingEvent::getCurrentThreadUserName()
 #if LOG4CXX_HAS_PTHREAD_GETNAME
 	char result[16];
 	pthread_t current_thread = pthread_self();
-	if( pthread_getname_np( current_thread, result, sizeof(result) ) < 0 ){
-		thread_name = LOG4CXX_STR("(noname)");
-	}
-
-	log4cxx::helpers::Transcoder::decode(reinterpret_cast<const char*>(result), thread_name);
+	if (pthread_getname_np(current_thread, result, sizeof(result)) < 0 || 0 == result[0])
+		thread_name = getCurrentThreadName();
+	else
+		thread_name = Transcoder::decode(result);
 #elif WIN32
 	typedef HRESULT (WINAPI *TGetThreadDescription)(HANDLE, PWSTR*);
 	static struct initialiser
@@ -392,18 +414,18 @@ const LogString& LoggingEvent::getCurrentThreadUserName()
 	{
 		PWSTR result = 0;
 		HRESULT hr = win32func.GetThreadDescription(GetCurrentThread(), &result);
-		if (SUCCEEDED(hr))
+		if (SUCCEEDED(hr) && result)
 		{
 			std::wstring wresult = result;
 			LOG4CXX_DECODE_WCHAR(decoded, wresult);
 			LocalFree(result);
 			thread_name = decoded;
 		}
-	}else{
-		thread_name = LOG4CXX_STR("(noname)");
 	}
+	if (thread_name.empty())
+		thread_name = getCurrentThreadName();
 #else
-	thread_name = LOG4CXX_STR("(noname)");
+	thread_name = getCurrentThreadName();
 #endif
 	return thread_name;
 }
@@ -448,7 +470,7 @@ log4cxx_time_t LoggingEvent::getTimeStamp() const
 	return m_priv->timeStamp;
 }
 
-const log4cxx::spi::LocationInfo& LoggingEvent::getLocationInformation() const
+const LOG4CXX_NS::spi::LocationInfo& LoggingEvent::getLocationInformation() const
 {
 	return m_priv->locationInfo;
 }

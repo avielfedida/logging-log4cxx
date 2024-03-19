@@ -31,10 +31,10 @@ extern "C" {
 }
 #endif
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
-#if LOG4CXX_LOGCHAR_IS_UNICHAR || LOG4CXX_UNICHAR_API || LOG4CXX_CFSTRING_API
+#if LOG4CXX_LOGCHAR_IS_UNICHAR || LOG4CXX_UNICHAR_API
 	typedef unsigned short UniChar;
 #endif
 
@@ -46,7 +46,7 @@ namespace log4cxx
 #if LOG4CXX_LOGCHAR_IS_UTF8
 	typedef char logchar;
 	#if LOG4CXX_CHARSET_EBCDIC
-		#define LOG4CXX_STR(str) log4cxx::helpers::Transcoder::decode(str)
+		#define LOG4CXX_STR(str) LOG4CXX_NS::helpers::Transcoder::decode(str)
 	#else
 		#define LOG4CXX_STR(str) str
 	#endif
@@ -54,7 +54,7 @@ namespace log4cxx
 
 #if LOG4CXX_LOGCHAR_IS_UNICHAR
 	typedef UniChar logchar;
-	#define LOG4CXX_STR(str) log4cxx::helpers::Transcoder::decode(str)
+	#define LOG4CXX_STR(str) LOG4CXX_NS::helpers::Transcoder::decode(str)
 #endif
 
 typedef std::basic_string<logchar> LogString;

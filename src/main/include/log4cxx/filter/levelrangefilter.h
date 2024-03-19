@@ -21,7 +21,7 @@
 #include <log4cxx/spi/filter.h>
 #include <log4cxx/level.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace filter
 {
@@ -70,7 +70,16 @@ class LOG4CXX_EXPORT LevelRangeFilter : public spi::Filter
 		~LevelRangeFilter();
 
 		/**
-		Set options
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		LevelMin | (\ref validLevels "1") | ALL
+		LevelMax | (\ref validLevels "1") | OFF
+		AcceptOnMatch | True,False | True
+
+		\anchor validLevels (1). One of "Trace", "Debug", "Info", "Warn", "Error", "Fatal", "Off", "All"
+		or a custom level in which case it is of the form <code>{levelName}#{registeredClassName}</code>.
 		*/
 		void setOption(const LogString& option, const LogString& value) override;
 

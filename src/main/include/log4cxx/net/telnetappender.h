@@ -25,7 +25,7 @@
 #include <vector>
 #include <log4cxx/helpers/charsetencoder.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -33,7 +33,7 @@ class ByteBuffer;
 }
 namespace net
 {
-typedef log4cxx::helpers::SocketPtr Connection;
+typedef LOG4CXX_NS::helpers::SocketPtr Connection;
 LOG4CXX_LIST_DEF(ConnectionList, Connection);
 
 /**
@@ -87,16 +87,37 @@ class LOG4CXX_EXPORT TelnetAppender : public AppenderSkeleton
 			return true;
 		}
 
+		/**
+		The current encoding value.
+
+		\sa setOption
+		 */
 		LogString getEncoding() const;
+		/**
+		Set the encoding to \c value.
+
+		\sa setOption
+		 */
 		void setEncoding(const LogString& value);
 
 
-		/** all of the options have been set, create the socket handler and
-		wait for connections. */
+		/**
+		\copybrief AppenderSkeleton::activateOptions()
+
+		Create the socket handler and wait for connections.
+		*/
 		void activateOptions(helpers::Pool& p) override;
 
+
 		/**
-		Set options
+		\copybrief AppenderSkeleton::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		Port | {int} | 23
+		Encoding | C,UTF-8,UTF-16,UTF-16BE,UTF-16LE,646,US-ASCII,ISO646-US,ANSI_X3.4-1968,ISO-8859-1,ISO-LATIN-1 | UTF-8
+
+		\sa AppenderSkeleton::setOption()
 		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
@@ -127,8 +148,8 @@ class LOG4CXX_EXPORT TelnetAppender : public AppenderSkeleton
 		TelnetAppender(const TelnetAppender&);
 		TelnetAppender& operator=(const TelnetAppender&);
 
-		void write(log4cxx::helpers::ByteBuffer&);
-		void writeStatus(const log4cxx::helpers::SocketPtr& socket, const LogString& msg, log4cxx::helpers::Pool& p);
+		void write(LOG4CXX_NS::helpers::ByteBuffer&);
+		void writeStatus(const LOG4CXX_NS::helpers::SocketPtr& socket, const LogString& msg, LOG4CXX_NS::helpers::Pool& p);
 		void acceptConnections();
 
 		struct TelnetAppenderPriv;

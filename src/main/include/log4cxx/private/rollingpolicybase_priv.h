@@ -23,11 +23,13 @@
 #ifndef _LOG4CXX_ROLLINGPOLICYBASE_PRIV_H
 #define _LOG4CXX_ROLLINGPOLICYBASE_PRIV_H
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace rolling{
 
 struct RollingPolicyBase::RollingPolicyBasePrivate {
+    virtual ~RollingPolicyBasePrivate() = default;
+
     /**
      * File name pattern converters.
      */

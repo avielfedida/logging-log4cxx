@@ -28,7 +28,7 @@
 #include <log4cxx/spi/hierarchyeventlistener.h>
 #include <log4cxx/helpers/pool.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 class Hierarchy;
@@ -60,7 +60,12 @@ class LOG4CXX_EXPORT Hierarchy : public spi::LoggerRepository
 	public:
 		DECLARE_ABSTRACT_LOG4CXX_OBJECT(Hierarchy)
 		BEGIN_LOG4CXX_CAST_MAP()
+#if 15 < LOG4CXX_ABI_VERSION
+		LOG4CXX_CAST_ENTRY(Hierarchy)
+		LOG4CXX_CAST_ENTRY_CHAIN(spi::LoggerRepository)
+#else
 		LOG4CXX_CAST_ENTRY(spi::LoggerRepository)
+#endif
 		END_LOG4CXX_CAST_MAP()
 
 	private:
@@ -76,6 +81,15 @@ class LOG4CXX_EXPORT Hierarchy : public spi::LoggerRepository
 
 		void addHierarchyEventListener(const spi::HierarchyEventListenerPtr& listener) override;
 
+		/**
+		 * Remove a previously added HierarchyEventListener.
+		 *
+		 */
+#if LOG4CXX_ABI_VERSION <= 15
+		void removeHierarchyEventListener(const spi::HierarchyEventListenerPtr& listener);
+#else
+		void removeHierarchyEventListener(const spi::HierarchyEventListenerPtr& listener) override;
+#endif
 		/**
 		 * Call \c configurator if not yet configured.
 		 */
@@ -108,12 +122,12 @@ class LOG4CXX_EXPORT Hierarchy : public spi::LoggerRepository
 		void setThreshold(const LogString& levelStr) override;
 
 		/**
-		Enable logging for logging requests with level <code>l</code> or
+		Enable logging for logging requests with level <code>newLevel</code> or
 		higher. By default all levels are enabled.
 
-		        @param l The minimum level for which logging requests are sent to
-		their appenders.  */
-		void setThreshold(const LevelPtr& l) override;
+		@param newLevel The minimum level of logging requests that are sent to appenders.
+		*/
+		void setThreshold(const LevelPtr& newLevel) override;
 
 		void fireAddAppenderEvent(const Logger* logger, const Appender* appender) override;
 
@@ -220,6 +234,23 @@ class LOG4CXX_EXPORT Hierarchy : public spi::LoggerRepository
 		void clearAppenders();
 
 		void addAppender(AppenderPtr appender);
+
+		/**
+		Remove the \c name Logger from the hierarchy.
+
+		Note: The \c name Logger must be retrieved from the hierarchy
+		\b after any subsequent configuration file change
+		for the newly loaded settings to be used.
+
+		@param name The logger to remove.
+		@param ifNotUsed If true and use_count() indicates there are other references, do not remove the Logger and return false.
+		@returns true if \c name Logger was removed from the hierarchy.
+		*/
+#if LOG4CXX_ABI_VERSION <= 15
+		bool removeLogger(const LogString& name, bool ifNotUsed = true);
+#else
+		bool removeLogger(const LogString& name, bool ifNotUsed = true) override;
+#endif
 
 	private:
 

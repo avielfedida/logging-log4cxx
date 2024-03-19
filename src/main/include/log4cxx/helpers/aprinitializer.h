@@ -25,17 +25,17 @@
 #include <log4cxx/helpers/object.h>
 #include <list>
 #include <log4cxx/helpers/date.h>
+#include <log4cxx/helpers/widelife.h>
 
 extern "C" {
-	typedef struct apr_thread_mutex_t apr_thread_mutex_t;
-	typedef struct apr_threadkey_t apr_threadkey_t;
+	struct apr_threadkey_t;
 	struct apr_pool_t;
 }
 
 #include <mutex>
 #include <functional>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -74,6 +74,7 @@ class APRInitializer
 
 
 	private: // Constructors
+		friend class helpers::WideLife<APRInitializer>;
 		APRInitializer();
 		APRInitializer(const APRInitializer&) = delete;
 		APRInitializer& operator=(const APRInitializer&) = delete;

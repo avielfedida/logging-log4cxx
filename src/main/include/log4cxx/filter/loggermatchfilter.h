@@ -21,7 +21,7 @@
 #include <log4cxx/spi/filter.h>
 #include <log4cxx/level.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 class Level;
 
@@ -59,7 +59,12 @@ class LOG4CXX_EXPORT LoggerMatchFilter : public spi::Filter
 		~LoggerMatchFilter();
 
 		/**
-		Set options
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		LoggerToMatch | {any} | root
+		AcceptOnMatch | True,False | True
 		*/
 		void setOption(const LogString& option, const LogString& value) override;
 

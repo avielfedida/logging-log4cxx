@@ -15,27 +15,12 @@
 # limitations under the License.
 #
 
-# Configure
-if(WIN32)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/log4cxx/version_info.h.in
-	           ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/version_info.h
-		   @ONLY
-    )
-    set(LOG4CXX_CHAR "utf-8" CACHE STRING "Interal character representation, choice of utf-8, wchar_t(default), unichar")
-    set_property(CACHE LOG4CXX_CHAR PROPERTY STRINGS "utf-8" "wchar_t" "unichar")
-    set(LOGCHAR_IS_UNICHAR 0)
-    set(LOGCHAR_IS_WCHAR 1)
-    set(LOGCHAR_IS_UTF8 0)
-else()
-    set(LOG4CXX_CHAR "utf-8" CACHE STRING "Interal character representation, choice of utf-8 (default), wchar_t, unichar")
-    set_property(CACHE LOG4CXX_CHAR PROPERTY STRINGS "utf-8" "wchar_t" "unichar")
-    set(LOGCHAR_IS_UNICHAR 0)
-    set(LOGCHAR_IS_WCHAR 0)
-    set(LOGCHAR_IS_UTF8 1)
-endif()
+set(GENERATED_HEADERS)
 
 # Configure log4cxx.h
 
+set(LOG4CXX_CHAR "utf-8" CACHE STRING "Internal character representation, choice of utf-8, wchar_t, unichar")
+set_property(CACHE LOG4CXX_CHAR PROPERTY STRINGS "utf-8" "wchar_t" "unichar")
 if(${LOG4CXX_CHAR} STREQUAL "unichar")
   set(LOGCHAR_IS_UNICHAR 1)
   set(LOGCHAR_IS_WCHAR 0)
@@ -44,7 +29,7 @@ elseif(${LOG4CXX_CHAR} STREQUAL "wchar_t")
   set(LOGCHAR_IS_WCHAR 1)
   set(LOGCHAR_IS_UNICHAR 0)
   set(LOGCHAR_IS_UTF8 0)
-elseif(${LOG4CXX_CHAR} STREQUAL "utf-8")
+else()
     set(LOGCHAR_IS_UNICHAR 0)
     set(LOGCHAR_IS_WCHAR 0)
     set(LOGCHAR_IS_UTF8 1)
@@ -73,6 +58,13 @@ else()
     set(NETWORKING_SUPPORT 0)
 endif()
 
+option(LOG4CXX_DOMCONFIGURATOR_SUPPORT "Support XML as a configuration method" ON)
+if(LOG4CXX_DOMCONFIGURATOR_SUPPORT)
+    set(DOMCONFIGURATOR_SUPPORT 1)
+else()
+    set(DOMCONFIGURATOR_SUPPORT 0)
+endif()
+
 option(LOG4CXX_MULTIPROCESS_ROLLING_FILE_APPENDER "Support multiple processes logging to the same file" OFF)
 if(LOG4CXX_MULTIPROCESS_ROLLING_FILE_APPENDER)
     set(MULTIPROCESS_RFA 1)
@@ -80,9 +72,28 @@ else()
     set(MULTIPROCESS_RFA 0)
 endif()
 
+option(LOG4CXX_EVENTS_AT_EXIT "Prevent static data cleanup to allow event logging during application exit. Note: Appenders should not configure the \"BufferedIO\" option to true." OFF)
+if(LOG4CXX_EVENTS_AT_EXIT )
+    set(EVENTS_AT_EXIT 1)
+else()
+    set(EVENTS_AT_EXIT 0)
+endif()
+
+set(LOG4CXX_DECLARE_DEFAULT_NS_ALIAS 0)
+if(NOT "log4cxx" STREQUAL "${LOG4CXX_NS}")
+    set(LOG4CXX_DECLARE_DEFAULT_NS_ALIAS 1)
+endif()
+
+set(LOG4CXX_FORMAT_NAMESPACE "fmt" CACHE STRING "format() function namespace, choice of fmt (default), std")
+set_property(CACHE LOG4CXX_FORMAT_NAMESPACE PROPERTY STRINGS "fmt" "std")
+set(LOG4CXX_USE_STANDARD_FORMAT 0)
+if("std" STREQUAL "${LOG4CXX_FORMAT_NAMESPACE}")
+    set(LOG4CXX_USE_STANDARD_FORMAT 1)
+endif()
+
 # Configure log4cxx_private.h
-set(LOG4CXX_CHARSET "locale" CACHE STRING "LogString characters, choice of locale (default), utf-8, ISO-8859-1, US-ASCII, EBCDIC")
-set_property(CACHE LOG4CXX_CHARSET PROPERTY STRINGS "locale" "utf-8" "ISO-8859-1" "US-ASCII" "EBCDIC")
+set(LOG4CXX_CHARSET "utf-8" CACHE STRING "LogString characters, choice of utf-8 (default), ISO-8859-1, US-ASCII, EBCDIC, locale")
+set_property(CACHE LOG4CXX_CHARSET PROPERTY STRINGS "utf-8" "ISO-8859-1" "US-ASCII" "EBCDIC" "locale")
 set(CHARSET_EBCDIC 0)
 set(CHARSET_USASCII 0)
 set(CHARSET_ISO88591 0)
@@ -102,50 +113,18 @@ endif()
 #
 include(CheckFunctionExists)
 include(CheckCXXSymbolExists)
-include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
 
-option(LOG4CXX_ENABLE_ODBC "Support logging via ODBC" OFF)
-if(LOG4CXX_ENABLE_ODBC)
-    if(WIN32)
-            CHECK_INCLUDE_FILES(sqlext.h HAS_ODBC)
-    else()
-            include(FindPkgConfig)
-
-            pkg_check_modules( odbc odbc )
-            if(${odbc_FOUND})
-                    set(HAS_ODBC 1)
-            else()
-                    set(HAS_ODBC 0)
-            endif(${odbc_FOUND})
-    endif(WIN32)
-
-    if(NOT ${HAS_ODBC})
-        message(SEND_ERROR "ODBC not found but requested")
-    endif()
-else()
-    set(HAS_ODBC 0)
-endif(LOG4CXX_ENABLE_ODBC)
-
-option(LOG4CXX_ENABLE_ESMTP "Support logging via libesmtp" OFF)
-if(LOG4CXX_ENABLE_ESMTP)
-    CHECK_LIBRARY_EXISTS(esmtp smtp_create_session "" HAS_LIBESMTP)
-    if(NOT HAS_LIBESMTP)
-        message(SEND_ERROR "SMTP support with libesmtp not found but requested")
-    endif()
-else()
-    set(HAS_LIBESMTP 0)
-endif(LOG4CXX_ENABLE_ESMTP)
-
 CHECK_INCLUDE_FILE_CXX(locale HAS_STD_LOCALE)
-CHECK_FUNCTION_EXISTS(mbsrtowcs HAS_MBSRTOWCS)
-CHECK_FUNCTION_EXISTS(wcstombs HAS_WCSTOMBS)
-CHECK_FUNCTION_EXISTS(fwide HAS_FWIDE)
-CHECK_FUNCTION_EXISTS(syslog HAS_SYSLOG)
+CHECK_SYMBOL_EXISTS(mbsrtowcs "cwchar" HAS_MBSRTOWCS)
+CHECK_SYMBOL_EXISTS(wcstombs "cstdlib" HAS_WCSTOMBS)
+CHECK_SYMBOL_EXISTS(fwide "cwchar" HAS_FWIDE )
+CHECK_SYMBOL_EXISTS(syslog "syslog.h" HAS_SYSLOG)
 if(UNIX)
     set(CMAKE_REQUIRED_LIBRARIES "pthread")
     CHECK_SYMBOL_EXISTS(pthread_sigmask "signal.h" HAS_PTHREAD_SIGMASK)
+    CHECK_SYMBOL_EXISTS(pthread_self "pthread.h" HAS_PTHREAD_SELF)
 
     # Check for the (linux) pthread_setname_np.
     # OSX and BSD are special apparently.  OSX only lets you name
@@ -154,10 +133,10 @@ if(UNIX)
     # it anyway, we're only going to worry about linux.
     include(${LOG4CXX_SOURCE_DIR}/src/cmake/pthread/log4cxx-pthread.cmake)
     if(${PTHREAD_SETNAME_NP_FOUND})
-	set(HAS_PTHREAD_SETNAME 1)
+        set(HAS_PTHREAD_SETNAME 1)
     endif()
     if(${PTHREAD_GETNAME_NP_FOUND})
-	set(HAS_PTHREAD_GETNAME 1)
+        set(HAS_PTHREAD_GETNAME 1)
     endif()
 endif(UNIX)
 
@@ -170,6 +149,7 @@ foreach(varName
   HAS_FWIDE
   HAS_LIBESMTP
   HAS_SYSLOG
+  HAS_PTHREAD_SELF
   HAS_PTHREAD_SIGMASK
   HAS_PTHREAD_SETNAME
   HAS_PTHREAD_GETNAME
@@ -187,20 +167,49 @@ endforeach()
 
 # Configure both our private header and our public header
 configure_file(${LOG4CXX_SOURCE_DIR}/src/cmake/compiler-features/makeunique.h.cmake
-                ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/helpers/makeunique.h
+               ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/helpers/makeunique.h
 )
+list(APPEND GENERATED_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/helpers/makeunique.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/log4cxx/private/log4cxx_private.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/private/log4cxx_private.h
                @ONLY
 )
+list(APPEND GENERATED_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/private/log4cxx_private.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/log4cxx/log4cxx.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/log4cxx.h
-	       @ONLY
+               @ONLY
 )
+list(APPEND GENERATED_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/log4cxx.h)
 configure_file(${LOG4CXX_SOURCE_DIR}/src/cmake/boost-fallback/boost-std-configuration.h.cmake
-                ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/private/boost-std-configuration.h
+               ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/private/boost-std-configuration.h
 )
-# Provide the dependencies
-add_custom_target(configure_log4cxx
-  COMMAND "${CMAKE_COMMAND}" -E echo "Checking configuration"
+list(APPEND GENERATED_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/private/boost-std-configuration.h)
+
+if(WIN32)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/log4cxx/version_info.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/version_info.h
+        @ONLY
+    )
+    list(APPEND GENERATED_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/log4cxx/version_info.h)
+endif()
+
+# A target for the convenience of working with headers in the IDE
+file(GENERATE
+     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/empty-lib-stub.cpp
+     CONTENT "namespace {int someUnused{};}\n"
 )
+file(GLOB_RECURSE HEADERS log4cxx/*)
+if(NOT LOG4CXX_DOMCONFIGURATOR_SUPPORT)
+    list(REMOVE_ITEM HEADERS "xml/domconfigurator.h")
+endif()
+add_library(log4cxx-include STATIC ${HEADERS} ${GENERATED_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/empty-lib-stub.cpp)
+target_include_directories(log4cxx-include PUBLIC . ${CMAKE_CURRENT_BINARY_DIR})
+
+# And the same for Qt
+option(LOG4CXX_QT_SUPPORT "Qt support/integration" OFF)
+if(LOG4CXX_QT_SUPPORT)
+	file(GLOB_RECURSE HEADERS_QT log4cxx-qt/*)
+	add_library(log4cxx-qt-include STATIC ${HEADERS_QT} ${CMAKE_CURRENT_BINARY_DIR}/empty-lib-stub.cpp)
+	target_include_directories(log4cxx-qt-include PUBLIC . ${CMAKE_CURRENT_BINARY_DIR})
+	add_dependencies(log4cxx-qt-include log4cxx-include)
+endif()

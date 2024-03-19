@@ -19,7 +19,7 @@
 
 #include <log4cxx/spi/filter.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 namespace filter
@@ -38,20 +38,33 @@ namespace filter
  * If location information is not available, this filter does nothing.
  *
  */
-class LOG4CXX_EXPORT LocationInfoFilter: public log4cxx::spi::Filter
+class LOG4CXX_EXPORT LocationInfoFilter: public LOG4CXX_NS::spi::Filter
 {
 		struct LocationInfoFilterPrivate;
 	public:
 		DECLARE_LOG4CXX_OBJECT(LocationInfoFilter)
 		BEGIN_LOG4CXX_CAST_MAP()
 		LOG4CXX_CAST_ENTRY(LocationInfoFilter)
-		LOG4CXX_CAST_ENTRY_CHAIN(log4cxx::spi::Filter)
+		LOG4CXX_CAST_ENTRY_CHAIN(LOG4CXX_NS::spi::Filter)
 		END_LOG4CXX_CAST_MAP()
 
 		LocationInfoFilter();
 
 		~LocationInfoFilter();
 
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		Method | {any} | -
+		LineNumber | {int} | -
+		Operator | (\ref andOrAny "1") | Or
+		AcceptOnMatch | True,False | True
+
+		\anchor andOrAny (1) If "And", both method name and line number must match,
+		otherwise either method name or line number match. 
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 		void setLineNumber(int lineNum);

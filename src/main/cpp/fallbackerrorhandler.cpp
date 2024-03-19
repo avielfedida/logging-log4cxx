@@ -25,10 +25,10 @@
 #include <log4cxx/hierarchy.h>
 #include <log4cxx/logmanager.h>
 
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-using namespace log4cxx::spi;
-using namespace log4cxx::varia;
+using namespace LOG4CXX_NS;
+using namespace LOG4CXX_NS::helpers;
+using namespace LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::varia;
 
 IMPLEMENT_LOG4CXX_OBJECT(FallbackErrorHandler)
 
@@ -37,6 +37,7 @@ struct FallbackErrorHandler::FallbackErrorHandlerPrivate
 	AppenderWeakPtr backup;
 	AppenderWeakPtr primary;
 	std::vector<LoggerPtr> loggers;
+	bool errorReported = false;
 };
 
 FallbackErrorHandler::FallbackErrorHandler()
@@ -91,6 +92,7 @@ void FallbackErrorHandler::error(const LogString& message,
 			+ l->getName());
 		l->addAppender(backupLocked);
 	}
+	m_priv->errorReported = true;
 }
 
 void FallbackErrorHandler::setAppender(const AppenderPtr& primary1)
@@ -124,3 +126,7 @@ void FallbackErrorHandler::setOption(const LogString&, const LogString&)
 {
 }
 
+bool FallbackErrorHandler::errorReported() const
+{
+	return m_priv->errorReported;
+}

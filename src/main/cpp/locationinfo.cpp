@@ -17,9 +17,10 @@
 
 #include <log4cxx/spi/location/locationinfo.h>
 #include <log4cxx/helpers/pool.h>
+#include <log4cxx/helpers/widelife.h>
 
-using namespace ::log4cxx::spi;
-using namespace log4cxx::helpers;
+using namespace ::LOG4CXX_NS::spi;
+using namespace LOG4CXX_NS::helpers;
 
 /**
   When location information is not available the constant
@@ -30,7 +31,7 @@ const char* const LocationInfo::NA_METHOD = "?::?";
 
 const LocationInfo& LocationInfo::getLocationUnavailable()
 {
-	static const LocationInfo unavailable;
+	static const WideLife<LocationInfo> unavailable;
 	return unavailable;
 }
 
@@ -44,9 +45,9 @@ LocationInfo::LocationInfo( const char* const fileName1,
 	const char* const methodName1,
 	int lineNumber1 )
 	:  lineNumber( lineNumber1 ),
-	   fileName( fileName1 ),
-	   shortFileName(shortFileName1),
-	   methodName( methodName1 )
+	   fileName( fileName1 ? fileName1 : LocationInfo::NA ),
+	   shortFileName(shortFileName1 ? shortFileName1 : LocationInfo::NA ),
+	   methodName( methodName1 ? methodName1 : LocationInfo::NA_METHOD )
 {
 }
 
@@ -80,6 +81,7 @@ LocationInfo::LocationInfo( const LocationInfo& src )
 LocationInfo& LocationInfo::operator = ( const LocationInfo& src )
 {
 	fileName = src.fileName;
+	shortFileName = src.shortFileName;
 	methodName = src.methodName;
 	lineNumber = src.lineNumber;
 	return * this;
@@ -91,6 +93,7 @@ LocationInfo& LocationInfo::operator = ( const LocationInfo& src )
 void LocationInfo::clear()
 {
 	fileName = NA;
+	shortFileName = NA;
 	methodName = NA_METHOD;
 	lineNumber = -1;
 }

@@ -26,7 +26,7 @@
 #include <log4cxx/helpers/pool.h>
 #include <log4cxx/level.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 /**
@@ -48,9 +48,9 @@ class LOG4CXX_EXPORT AppenderSkeleton :
 		method to perform actual logging. See also AppenderSkeleton::doAppend
 		method.
 		*/
-		virtual void append(const spi::LoggingEventPtr& event, log4cxx::helpers::Pool& p) = 0;
+		virtual void append(const spi::LoggingEventPtr& event, LOG4CXX_NS::helpers::Pool& p) = 0;
 
-		void doAppendImpl(const spi::LoggingEventPtr& event, log4cxx::helpers::Pool& pool);
+		void doAppendImpl(const spi::LoggingEventPtr& event, LOG4CXX_NS::helpers::Pool& pool);
 
 	public:
 		DECLARE_ABSTRACT_LOG4CXX_OBJECT(AppenderSkeleton)
@@ -71,10 +71,19 @@ class LOG4CXX_EXPORT AppenderSkeleton :
 		void finalize();
 
 		/**
-		Derived appenders should override this method if option structure
-		requires it.
+		\copybrief spi::OptionHandler::activateOptions()
+
+		No action is performed in this implementation.
 		*/
 		void activateOptions(helpers::Pool& /* pool */) override {}
+
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		Threshold | Trace,Debug,Info,Warn,Error,Fatal,Off,All | All
+		*/
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**
@@ -145,9 +154,7 @@ class LOG4CXX_EXPORT AppenderSkeleton :
 
 		/**
 		Set the layout for this appender. Note that some appenders have
-		their own (fixed) layouts or do not use one. For example, the
-		{@link net::XMLSocketAppender XMLSocketAppender} ignores the layout set
-		here.
+		their own (fixed) layouts or do not use one.
 		*/
 		void setLayout(const LayoutPtr layout1) override;
 

@@ -19,10 +19,11 @@
 #define _LOG4CXX_HELPERS_LOG_LOG_H
 
 #include <log4cxx/logstring.h>
+#include <log4cxx/helpers/widelife.h>
 #include <exception>
 #include <mutex>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -42,6 +43,7 @@ class LOG4CXX_EXPORT LogLog
 	private:
 		LOG4CXX_DECLARE_PRIVATE_MEMBER_PTR(LogLogPrivate, m_priv)
 
+		friend WideLife<LogLog>;
 		LogLog();
 		LogLog(const LogLog&);
 		LogLog& operator=(const LogLog&);
@@ -102,12 +104,12 @@ class LOG4CXX_EXPORT LogLog
 } // namespace log4cxx
 
 #define LOGLOG_DEBUG(log) { \
-		log4cxx::helpers::LogLog::debug(log) ; }
+		LOG4CXX_NS::helpers::LogLog::debug(log) ; }
 
 #define LOGLOG_WARN(log) { \
-		log4cxx::helpers::LogLog::warn(log) ; }
+		LOG4CXX_NS::helpers::LogLog::warn(log) ; }
 
 #define LOGLOG_ERROR(log) { \
-		log4cxx::helpers::LogLog::warn(log); }
+		LOG4CXX_NS::helpers::LogLog::warn(log); }
 
 #endif //_LOG4CXX_HELPERS_LOG_LOG_H

@@ -20,16 +20,16 @@
 
 #include <log4cxx/helpers/serversocket.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
 
 struct ServerSocket::ServerSocketPrivate{
-    ServerSocketPrivate() :
-        timeout(0){}
-
-    int timeout;
+	ServerSocketPrivate() :
+		timeout(0){}
+	virtual ~ServerSocketPrivate() = default;
+	int timeout;
 };
 
 }

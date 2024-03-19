@@ -27,7 +27,7 @@
 #include <chrono>
 
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace helpers
 {
@@ -69,12 +69,30 @@ class LOG4CXX_EXPORT LoggingEvent :
 		<p>
 		@param logger The logger of this event.
 		@param level The level of this event.
-		@param message  The message of this event.
-		@param location location of logging request.
+		@param location The source code location of the logging request.
+		@param message  The text to add to this event.
+		*/
+		LoggingEvent
+			( const LogString& logger
+			, const LevelPtr& level
+			, const spi::LocationInfo& location
+			, LogString&& message
+			);
+
+		/**
+		Instantiate a LoggingEvent from the supplied parameters.
+
+		<p>Except timeStamp all the other fields of
+		<code>LoggingEvent</code> are filled when actually needed.
+		<p>
+		@param logger The logger of this event.
+		@param level The level of this event.
+		@param message  The text to add to this event.
+		@param location The source code location of the logging request.
 		*/
 		LoggingEvent(const LogString& logger,
 			const LevelPtr& level,   const LogString& message,
-			const log4cxx::spi::LocationInfo& location);
+			const LOG4CXX_NS::spi::LocationInfo& location);
 
 		~LoggingEvent();
 
@@ -111,7 +129,7 @@ class LOG4CXX_EXPORT LoggingEvent :
 		std::chrono::time_point<std::chrono::system_clock> getChronoTimeStamp() const;
 
 		/* Return the file where this log statement was written. */
-		const log4cxx::spi::LocationInfo& getLocationInformation() const;
+		const LOG4CXX_NS::spi::LocationInfo& getLocationInformation() const;
 
 		/**
 		* This method appends the NDC for this event to passed string. It will return the

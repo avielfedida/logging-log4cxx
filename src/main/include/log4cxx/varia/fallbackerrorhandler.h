@@ -24,7 +24,7 @@
 #include <log4cxx/logger.h>
 #include <vector>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 namespace varia
 {
@@ -38,8 +38,7 @@ whatever reason.
 logged in the new secondary appender.
 */
 class LOG4CXX_EXPORT FallbackErrorHandler :
-	public virtual spi::ErrorHandler,
-	public virtual helpers::Object
+	public virtual spi::ErrorHandler
 {
 	private:
 		LOG4CXX_DECLARE_PRIVATE_MEMBER_PTR(FallbackErrorHandlerPrivate, m_priv)
@@ -62,9 +61,14 @@ class LOG4CXX_EXPORT FallbackErrorHandler :
 
 
 		/**
-		No options to activate.
+		\copybrief spi::OptionHandler::activateOptions()
+
+		No action is performed in this implementation.
 		*/
 		void activateOptions(helpers::Pool& p) override;
+		/**
+		\copybrief spi::OptionHandler::setOption()
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 
 
@@ -98,6 +102,15 @@ class LOG4CXX_EXPORT FallbackErrorHandler :
 		Set the backup appender.
 		*/
 		void setBackupAppender(const AppenderPtr& backup) override;
+
+		/**
+		Has an error been reported?
+		*/
+#if 15 < LOG4CXX_ABI_VERSION
+		bool errorReported() const override;
+#else
+		bool errorReported() const;
+#endif
 };
 LOG4CXX_PTR_DEF(FallbackErrorHandler);
 

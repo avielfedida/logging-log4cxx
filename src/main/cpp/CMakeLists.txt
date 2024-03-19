@@ -20,43 +20,57 @@ option(LOG4CXX_ABI_CHECK "Check for ABI changes" OFF)
 
 # Build the log4cxx library
 add_library(log4cxx)
+if(${log4cxx_ABI_VER} GREATER 15)
+  set_target_properties(log4cxx PROPERTIES CXX_VISIBILITY_PRESET hidden)
+endif()
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(log4cxx PRIVATE LOG4CXX)
+    if(UNIX AND NOT APPLE)
+        # Make defined symbols non-preemptible, which can optimize relocation processing
+        target_link_options(log4cxx PRIVATE "LINKER:-Bsymbolic")
+    endif()
 else()
     target_compile_definitions(log4cxx PUBLIC LOG4CXX_STATIC)
 endif()
-add_dependencies(log4cxx configure_log4cxx)
+add_dependencies(log4cxx log4cxx-include)
 
 set(extra_classes "")
 
 if(LOG4CXX_NETWORKING_SUPPORT)
-    set(extra_classes ${extra_classes}
-	datagrampacket.cpp
-	datagramsocket.cpp
-	aprdatagramsocket.cpp
-	serversocket.cpp
-	aprserversocket.cpp
-	socket.cpp
-	aprsocket.cpp
-	telnetappender.cpp
-	socketappenderskeleton.cpp
-	socketoutputstream.cpp
-	xmlsocketappender.cpp
-	syslogwriter.cpp
-	syslogappender.cpp
+    list(APPEND extra_classes
+        datagrampacket.cpp
+        datagramsocket.cpp
+        aprdatagramsocket.cpp
+        serversocket.cpp
+        aprserversocket.cpp
+        socket.cpp
+        aprsocket.cpp
+        telnetappender.cpp
+        socketappenderskeleton.cpp
+        socketoutputstream.cpp
+        xmlsocketappender.cpp
+        syslogwriter.cpp
+        syslogappender.cpp
+    )
+endif()
+
+if(LOG4CXX_DOMCONFIGURATOR_SUPPORT)
+    list(APPEND extra_classes
+	domconfigurator.cpp
 	)
 endif()
 
-if()
-    set(extra_classes ${extra_classes}
-	multiprocessrollingfileappender.cpp
-	)
+if(LOG4CXX_MULTIPROCESS_ROLLING_FILE_APPENDER)
+    target_compile_definitions(log4cxx PRIVATE LOG4CXX_MULTI_PROCESS)
+    list(APPEND extra_classes
+        multiprocessrollingfileappender.cpp
+    )
 endif()
 
 if(${ENABLE_FMT_LAYOUT})
-    set(extra_classes ${extra_classes}
-	fmtlayout.cpp
-	)
+    list(APPEND extra_classes
+        fmtlayout.cpp
+    )
 endif()
 
 target_sources(log4cxx
@@ -86,10 +100,10 @@ target_sources(log4cxx
   date.cpp
   dateformat.cpp
   datepatternconverter.cpp
+  dbappender.cpp
   defaultconfigurator.cpp
   defaultloggerfactory.cpp
   defaultrepositoryselector.cpp
-  domconfigurator.cpp
   exception.cpp
   fallbackerrorhandler.cpp
   file.cpp
@@ -106,6 +120,7 @@ target_sources(log4cxx
   formattinginfo.cpp
   fulllocationpatternconverter.cpp
   gzcompressaction.cpp
+  hexdump.cpp
   hierarchy.cpp
   htmllayout.cpp
   inetaddress.cpp
@@ -143,6 +158,7 @@ target_sources(log4cxx
   nameabbreviator.cpp
   namepatternconverter.cpp
   ndc.cpp
+  mdcpatternconverter.cpp
   ndcpatternconverter.cpp
   nteventlogappender.cpp
   odbcappender.cpp
@@ -198,11 +214,28 @@ target_sources(log4cxx
   zipcompressaction.cpp
   ${extra_classes}
 )
+
+if(LOG4CXX_EVENTS_AT_EXIT)
+  target_sources(log4cxx
+    PRIVATE atexitregistry.cpp
+  )
+endif(LOG4CXX_EVENTS_AT_EXIT)
+
+if(WIN32)
+  target_sources(log4cxx
+    PRIVATE visualstudio.natvis
+  )
+endif(WIN32)
+
+set(LOG4CXX_LIB_NAME "log4cxx" CACHE STRING "Main library base name")
 set_target_properties(log4cxx PROPERTIES
   VERSION ${LIBLOG4CXX_LIB_VERSION}
   SOVERSION ${LIBLOG4CXX_LIB_SOVERSION}
+  OUTPUT_NAME ${LOG4CXX_LIB_NAME}
+  PDB_NAME ${LOG4CXX_LIB_NAME}
+  COMPILE_PDB_NAME ${LOG4CXX_LIB_NAME}
+  EXPORT_NAME ${LOG4CXX_LIB_NAME}
 )
-boostfallback_link(log4cxx)
 get_directory_property( FILESYSTEM_IMPL DIRECTORY "${LOG4CXX_SOURCE_DIR}/src/main/include" DEFINITION FILESYSTEM_IMPL )
 if("${FILESYSTEM_IMPL}" STREQUAL "std::filesystem" OR
    "${FILESYSTEM_IMPL}" STREQUAL "std::experimental::filesystem" )
@@ -214,6 +247,10 @@ if(${ENABLE_FMT_LAYOUT})
 endif()
 
 if(LOG4CXX_ABI_CHECK)
+    if(NOT "log4cxx" STREQUAL "${LOG4CXX_NS}")
+      message(FATAL_ERROR "ABI compatability can only be checked if LOG4CXX_NS=log4cxx, but LOG4CXX_NS=${LOG4CXX_NS}.")
+    endif()
+
     message("Getting dependencies for ABI compatability check...")
     # Get the latest version of abi-dumper and abi-compliance-checker
     include(FetchContent)
@@ -240,11 +277,11 @@ if(LOG4CXX_ABI_CHECK)
 
     add_custom_target(dump-abi ALL
         COMMAND perl ${abi-dumper-script} -o new-abi.dump -skip-cxx -vnum ${log4cxx_ABI_VER} $<TARGET_FILE:log4cxx>
-	DEPENDS log4cxx
-	COMMENT "Dumping ABI symbols")
+        DEPENDS log4cxx
+        COMMENT "Dumping ABI symbols")
 
     add_custom_target(compare-abi ALL
-	COMMAND perl ${abi-compliance-script} -skip-internal-symbols "\\d\\(fmt\\)" -skip-internal-types "\\(fmt\\)::" -l log4cxx -old ${LOG4CXX_SOURCE_DIR}/src/main/abi-symbols/abi.dump -new new-abi.dump
-	DEPENDS dump-abi
-	COMMENT "Comparing ABI symbols")
+        COMMAND perl ${abi-compliance-script} -skip-internal-symbols "\\d\\(fmt\\)" -skip-internal-types "\\(fmt\\)::" -l log4cxx -old ${LOG4CXX_SOURCE_DIR}/src/main/abi-symbols/abi.dump -new new-abi.dump
+        DEPENDS dump-abi
+        COMMENT "Comparing ABI symbols")
 endif(LOG4CXX_ABI_CHECK)

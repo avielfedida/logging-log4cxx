@@ -26,7 +26,7 @@
 
 #include <log4cxx/layout.h>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 /**
  * The FMTLayout class uses libfmt to layout messages.  This is an alternative to the PatternLayout class.
@@ -245,8 +245,6 @@ class LOG4CXX_EXPORT FMTLayout : public Layout
 		<code>level</code>, followed by " - " and then the
 		<code>message</code>. For example, <pre> INFO - "A message"
 		</pre>
-
-		@return A byte array in SimpleLayout format.
 		*/
 		void format(LogString& output,
 			const spi::LoggingEventPtr& event,
@@ -257,7 +255,21 @@ class LOG4CXX_EXPORT FMTLayout : public Layout
 			return true;
 		}
 
+		/**
+		\copybrief spi::OptionHandler::activateOptions()
+
+		No action is performed in this implementation.
+		*/
 		void activateOptions(helpers::Pool& /* p */) override;
+
+		/**
+		\copybrief spi::OptionHandler::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		ConversionPattern | {any} | -
+
+		 */
 		void setOption(const LogString& /* option */,
 		        const LogString& /* value */) override;
 };

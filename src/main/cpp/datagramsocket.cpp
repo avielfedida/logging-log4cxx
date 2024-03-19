@@ -22,10 +22,7 @@
 #include <log4cxx/private/datagramsocket_priv.h>
 #include <log4cxx/private/aprdatagramsocket.h>
 
-#include "apr_network_io.h"
-#include "apr_lib.h"
-
-using namespace log4cxx::helpers;
+using namespace LOG4CXX_NS::helpers;
 
 IMPLEMENT_LOG4CXX_OBJECT(DatagramSocket)
 
@@ -84,7 +81,7 @@ DatagramSocketUniquePtr DatagramSocket::create(){
 }
 
 DatagramSocketUniquePtr DatagramSocket::create(int localPort1){
-	std::unique_ptr<APRDatagramSocket> sock = std::make_unique<APRDatagramSocket>();
+	auto sock = std::make_unique<APRDatagramSocket>(localPort1);
 	InetAddressPtr bindAddr = InetAddress::anyAddress();
 
 	sock->bind(localPort1, bindAddr);
@@ -92,7 +89,7 @@ DatagramSocketUniquePtr DatagramSocket::create(int localPort1){
 }
 
 DatagramSocketUniquePtr DatagramSocket::create(int localPort1, InetAddressPtr localAddress1){
-	std::unique_ptr<APRDatagramSocket> sock = std::make_unique<APRDatagramSocket>();
+	auto sock = std::make_unique<APRDatagramSocket>(localPort1, localAddress1);
 
 	sock->bind(localPort1, localAddress1);
 	return sock;

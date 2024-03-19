@@ -22,7 +22,7 @@
 #include <log4cxx/helpers/outputstreamwriter.h>
 #include <atomic>
 
-namespace log4cxx
+namespace LOG4CXX_NS
 {
 
 namespace helpers
@@ -49,7 +49,7 @@ class LOG4CXX_EXPORT WriterAppender : public AppenderSkeleton
 		WriterAppender();
 	protected:
 		WriterAppender(const LayoutPtr& layout,
-			log4cxx::helpers::WriterPtr& writer);
+			LOG4CXX_NS::helpers::WriterPtr& writer);
 		WriterAppender(const LayoutPtr& layout);
 		WriterAppender(std::unique_ptr<WriterAppenderPriv> priv);
 
@@ -131,25 +131,43 @@ class LOG4CXX_EXPORT WriterAppender : public AppenderSkeleton
 		virtual helpers::WriterPtr createWriter(helpers::OutputStreamPtr& os);
 
 	public:
+		/**
+		The current encoding value.
+
+		\sa setOption
+		 */
 		LogString getEncoding() const;
+		/**
+		Set the encoding to \c value.
+
+		\sa setOption
+		 */
 		void setEncoding(const LogString& value);
+
+		/**
+		\copybrief AppenderSkeleton::setOption()
+
+		Supported options | Supported values | Default value
+		-------------- | ---------------- | ---------------
+		Encoding | C,UTF-8,UTF-16,UTF-16BE,UTF-16LE,646,US-ASCII,ISO646-US,ANSI_X3.4-1968,ISO-8859-1,ISO-LATIN-1 | UTF-8
+
+		\sa AppenderSkeleton::setOption()
+		 */
 		void setOption(const LogString& option, const LogString& value) override;
 
 		/**
-		  <p>Sets the Writer where the log output will go. The
-		  specified Writer must be opened by the user and be
-		  writable.
+		  <p>Send log output to \c writer which must be open and be writable.
 
-		  <p>The <code>java.io.Writer</code> will be closed when the
+		  <p>The helpers::Writer will be closed when the
 		  appender instance is closed.
 
+		  <b>WARNING:</b> Logging to an unopened Writer will fail.
 
-		  <p><b>WARNING:</b> Logging to an unopened Writer will fail.
-		  <p>
-		  @param writer An already opened Writer.  */
-		void setWriter(const log4cxx::helpers::WriterPtr& writer);
+		  @param writer An already opened Writer.
+		*/
+		void setWriter(const LOG4CXX_NS::helpers::WriterPtr& writer);
 
-		const log4cxx::helpers::WriterPtr getWriter() const;
+		const LOG4CXX_NS::helpers::WriterPtr getWriter() const;
 
 		bool requiresLayout() const override;
 
@@ -157,23 +175,23 @@ class LOG4CXX_EXPORT WriterAppender : public AppenderSkeleton
 		/**
 		 Actual writing occurs here.
 		*/
-		virtual void subAppend(const spi::LoggingEventPtr& event, log4cxx::helpers::Pool& p);
+		virtual void subAppend(const spi::LoggingEventPtr& event, LOG4CXX_NS::helpers::Pool& p);
 
 
 		/**
 		Write a footer as produced by the embedded layout's
 		Layout#appendFooter method.  */
-		virtual void writeFooter(log4cxx::helpers::Pool& p);
+		virtual void writeFooter(LOG4CXX_NS::helpers::Pool& p);
 
 		/**
 		Write a header as produced by the embedded layout's
 		Layout#appendHeader method.  */
-		virtual void writeHeader(log4cxx::helpers::Pool& p);
+		virtual void writeHeader(LOG4CXX_NS::helpers::Pool& p);
 
 		/**
 		 * Set the writer.  Mutex must already be held.
 		 */
-		void setWriterInternal(const log4cxx::helpers::WriterPtr& writer);
+		void setWriterInternal(const LOG4CXX_NS::helpers::WriterPtr& writer);
 
 	private:
 		//

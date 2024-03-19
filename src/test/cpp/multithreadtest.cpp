@@ -19,34 +19,46 @@
 
 #include <log4cxx/logger.h>
 #include <log4cxx/logmanager.h>
-#include <log4cxx/simplelayout.h>
-#include <log4cxx/appenderskeleton.h>
+#include <log4cxx/patternlayout.h>
+#include <log4cxx/fileappender.h>
+#include <log4cxx/helpers/optionconverter.h>
 #include <thread>
 #include <vector>
 #include <random>
 #include <mutex>
 
-using log4cxx::Logger;
-using log4cxx::LoggerPtr;
-using log4cxx::LogManager;
+using namespace log4cxx;
 
-class NullWriterAppender : public log4cxx::AppenderSkeleton
+//#define TEST_WITH_FLUENT_BIT
+#ifdef TEST_WITH_FLUENT_BIT
+#include <log4cxx/net/xmlsocketappender.h>
+#include <log4cxx/jsonlayout.h>
+class MyAppender : public net::XMLSocketAppender
 {
-	public:
-		NullWriterAppender() {}
-
-		virtual void close() {}
-
-		virtual bool requiresLayout() const
-		{
-			return false;
-		}
-
-		virtual void append(const log4cxx::spi::LoggingEventPtr& event, log4cxx::helpers::Pool& p)
-		{
-			// Do nothing but discard the data
-		}
+public:
+	MyAppender() : net::XMLSocketAppender(LOG4CXX_STR("127.0.0.1"), 5170)
+	{
+		auto layout = std::make_shared<JSONLayout>();
+		layout->setThreadInfo(true);
+		setLayout(layout);
+	}
 };
+#else
+class MyAppender : public FileAppender
+{
+public:
+	MyAppender()
+	{
+		auto tempDir = helpers::OptionConverter::getSystemProperty(LOG4CXX_STR("TEMP"), LOG4CXX_STR("/tmp"));
+		setFile(tempDir + LOG4CXX_STR("/") + LOG4CXX_STR("multithread_test.log"));
+		setLayout(std::make_shared<PatternLayout>(LOG4CXX_STR("%d [%t] %-5p %.16c - %m%n")));
+		setAppend(false);
+		setBufferedIO(true);
+		helpers::Pool p;
+		activateOptions(p);
+	}
+};
+#endif
 
 static void multithread_logger( int times )
 {
@@ -69,10 +81,11 @@ static void multithread_logger( int times )
 
 	for ( int x = 0; x < times; x++ )
 	{
-		LOG4CXX_INFO( logger, "This is a test message that has some data" );
+		LOG4CXX_INFO( logger, "This is test message " << x );
 
 		if ( distribution(gen) == x )
 		{
+			LOG4CXX_INFO( logger, "Exiting");
 			std::call_once(exiting, std::exit, 0);
 		}
 	}
@@ -88,8 +101,7 @@ public:
 	void setUp()
 	{
 		Logger::getRootLogger()->removeAllAppenders();
-		std::shared_ptr<NullWriterAppender> nullWriter( new NullWriterAppender() );
-		Logger::getRootLogger()->addAppender( nullWriter );
+		Logger::getRootLogger()->addAppender( std::make_shared<MyAppender>() );
 	}
 
 	void tearDown()
